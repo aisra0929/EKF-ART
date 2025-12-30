@@ -143,8 +143,17 @@ body {
 
 /* --- HEADERS --- */
 .main-title { width: 100%; display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0 20px 0; padding: 10px 40px; box-sizing: border-box;}
-.main-title-text { flex: 1; text-align: center; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px rgba(255,255,255,0.3); font-weight: 800; }
-.title-image { height: clamp(40px, 6vw, 80px); width: auto; object-fit: contain; flex-shrink: 0; }
+/*
+.main-title-text { flex: 1; text-align: center; font-size: 2.5rem; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px rgba(255,255,255,0.3); font-weight: 800; }*/
+
+.main-title-image {
+    height: 85px; /* Adjust this height to match your layout */
+    width: 600px;  /* Maintains aspect ratio */
+    vertical-align: middle;
+    margin: 0 10px; /* Adds spacing between the flags and the logo */
+}
+
+.title-image { height: clamp(40px, 6vw, 85px); width: auto; object-fit: contain; flex-shrink: 0; }
 
 .referee-container { margin-bottom: 15px; width: 300px; }
 .referee-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #555; color: #aaa; text-align: center; font-size: 1.2rem; padding: 5px; outline: none; }
