@@ -108,12 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const createInitialBracket = (players) => {
         const rounds = [];
-        let currentPlayers = [...players];
+        let currentPlayers = players.map((entry, idx) => ({ name: entry.name, seed: idx + 1, flag: entry.flag || null }));
         let roundIndex = 0;
+        
         while (currentPlayers.length > 1) {
             const roundMatches = [];
             for (let i = 0; i < currentPlayers.length; i += 2) {
-                roundMatches.push({ id: `R${roundIndex + 1}-M${(i / 2) + 1}`, players: [currentPlayers[i] || null, currentPlayers[i + 1] || null], winner: null, complete: false });
+                roundMatches.push({ 
+                    id: `R${roundIndex + 1}-M${(i / 2) + 1}`, 
+                    players: [currentPlayers[i] || null, currentPlayers[i + 1] || null], 
+                    winner: null, 
+                    complete: false 
+                });
             }
             rounds.push(roundMatches);
             currentPlayers = roundMatches.map(() => ({ name: 'TBD', seed: null, flag: null }));
@@ -132,9 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
             column.appendChild(title);
             matches.forEach((match) => {
                 const p1 = match.players[0] || {}; const p2 = match.players[1] || {};
+                const p1Flag = p1.flag ? `<img src="${p1.flag}" alt="" class="bracket-flag">` : '';
+                const p2Flag = p2.flag ? `<img src="${p2.flag}" alt="" class="bracket-flag">` : '';
                 const card = document.createElement('div');
                 card.className = `match-card ${match.winner !== null ? 'winner-known' : ''}`;
-                card.innerHTML = `<div class="match-title">${match.id}</div><div class="competitor"><span>${p1.name || 'TBD'}</span><span>${match.winner === 0 ? '✔' : ''}</span></div><div class="competitor"><span>${p2.name || 'TBD'}</span><span>${match.winner === 1 ? '✔' : ''}</span></div>`;
+                card.innerHTML = `<div class="match-title">${match.id}</div><div class="competitor">${p1Flag}<span>${p1.name || 'TBD'}</span><span>${match.winner === 0 ? '✔' : ''}</span></div><div class="competitor">${p2Flag}<span>${p2.name || 'TBD'}</span><span>${match.winner === 1 ? '✔' : ''}</span></div>`;
                 column.appendChild(card);
             });
             els.bracketGrid.appendChild(column);
@@ -177,13 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (penalty === 'S') { promptDrasticAction('SHIKKAKU', team); return; }
         if (penalty === 'H') { promptDrasticAction('HANSOKU', team); return; }
         btn.classList.toggle('active');
-        if (btn.classList.contains('active')) {
-            state.penalties[team].push(penalty);
-            recordLog(`${team.toUpperCase()} penalty: ${penalty}`);
-        } else {
-            state.penalties[team] = state.penalties[team].filter(p => p !== penalty);
-            recordLog(`${team.toUpperCase()} penalty cleared: ${penalty}`);
-        }
+        if (btn.classList.contains('active')) state.penalties[team].push(penalty);
+        else state.penalties[team] = state.penalties[team].filter(p => p !== penalty);
     };
 
     const promptDrasticAction = (type, offenderTeam) => {
@@ -241,8 +244,27 @@ document.addEventListener('DOMContentLoaded', () => {
         els.aoSenshu.classList.remove('active'); els.akaSenshu.classList.remove('active');
         state.timer.remaining = state.timer.duration; els.timerDisplay.textContent = formatClock(state.timer.remaining);
         const match = state.tournament.rounds[state.tournament.active.roundIndex][state.tournament.active.matchIndex];
-        els.aoNameInput.value = (match.players[0]?.name && match.players[0].name !== 'TBD') ? match.players[0].name : 'SHIRO';
-        els.akaNameInput.value = (match.players[1]?.name && match.players[1].name !== 'TBD') ? match.players[1].name : 'AKA';
+        
+        const playerA = match.players[0] || { name: 'SHIRO', flag: null };
+        const playerB = match.players[1] || { name: 'AKA', flag: null };
+
+        els.aoNameInput.value = playerA.name;
+        els.akaNameInput.value = playerB.name;
+
+        // FIXED: Restore Flag Display
+        const applyFlag = (img, src) => {
+            if (!img) return;
+            if (src) {
+                img.src = src;
+                img.style.display = 'block';
+            } else {
+                img.removeAttribute('src');
+                img.style.display = 'none';
+            }
+        };
+        applyFlag(els.aoFlagScore, playerA.flag);
+        applyFlag(els.akaFlagScore, playerB.flag);
+
         lockControls(false); renderBracket();
         state.logBuffer = [];
         state.matchStartTime = null;
@@ -256,10 +278,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isActive) {
             indicator.classList.add('active');
             other.classList.remove('active');
-            recordLog(`${team.toUpperCase()} gains Senshu`);
         } else {
             indicator.classList.remove('active');
-            recordLog(`${team.toUpperCase()} loses Senshu`);
         }
     };
 
@@ -329,63 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeHistoryModal = () => els.historyModal.classList.add('hidden');
     const eraseHistory = () => { if (window.confirm('Erase all saved match history?')) { persistLogs([]); renderHistoryList([]); } };
 
-    const escapePdfText = (text) => text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-    const wrapPdfLines = (text) => {
-        const wrapped = [];
-        const rawLines = text.split('\n');
-        rawLines.forEach((line) => {
-            let working = line || ' ';
-            while (working.length > PDF_LINE_LIMIT) {
-                wrapped.push(working.slice(0, PDF_LINE_LIMIT));
-                working = working.slice(PDF_LINE_LIMIT);
-            }
-            wrapped.push(working.length ? working : ' ');
-        });
-        return wrapped;
-    };
-    const createPdfBlob = (text) => {
-        const lines = wrapPdfLines(text).map(escapePdfText);
-        const maxLinesPerPage = Math.floor((PDF_PAGE.height - (PDF_PAGE.margin * 2)) / PDF_PAGE.lineHeight);
-        const chunks = [];
-        for (let i = 0; i < lines.length; i += maxLinesPerPage) { chunks.push(lines.slice(i, i + maxLinesPerPage)); }
-        if (!chunks.length) chunks.push([' ']);
-
-        const objects = [];
-        const addObject = (body) => { objects.push(body); return objects.length; };
-        addObject('<< /Type /Catalog /Pages 2 0 R >>');
-        const pagesIndex = addObject('__PAGES__');
-        const fontIndex = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-        const pageNumbers = [];
-        chunks.forEach((chunk) => {
-            let contentStream = 'BT\n/F1 12 Tf\n14 TL\n';
-            contentStream += `50 ${PDF_PAGE.height - PDF_PAGE.margin} Td\n`;
-            chunk.forEach((line, idx) => { if (idx > 0) contentStream += 'T*\n'; contentStream += `(${line || ' '}) Tj\n`; });
-            contentStream += 'ET';
-            const contentIndex = addObject(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
-            const pageIndex = addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_PAGE.width} ${PDF_PAGE.height}] /Contents ${contentIndex} 0 R /Resources << /Font << /F1 ${fontIndex} 0 R >> >> >>`);
-            pageNumbers.push(pageIndex);
-        });
-        objects[pagesIndex - 1] = `<< /Type /Pages /Kids [${pageNumbers.map((num) => `${num} 0 R`).join(' ')}] /Count ${pageNumbers.length} >>`;
-        let pdf = '%PDF-1.4\n';
-        const offsets = [0];
-        objects.forEach((body, idx) => { offsets[idx + 1] = pdf.length; pdf += `${idx + 1} 0 obj\n${body}\nendobj\n`; });
-        const xrefPosition = pdf.length;
-        pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-        for (let i = 1; i <= objects.length; i++) { pdf += `${offsets[i].toString().padStart(10, '0')} 00000 n \n`; }
-        pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`;
-        return new Blob([pdf], { type: 'application/pdf' });
-    };
-    const downloadLogAsPdf = (log) => {
-        const blob = createPdfBlob(log.content);
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = log.filename.replace('.txt', '.pdf');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(link.href), 0);
-    };
-
     const getFullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
     const requestFullscreen = (element) => element.requestFullscreen ? element.requestFullscreen() : (element.webkitRequestFullscreen ? element.webkitRequestFullscreen() : element.mozRequestFullScreen());
     const exitFullscreen = () => document.exitFullscreen ? document.exitFullscreen() : (document.webkitExitFullscreen ? document.webkitExitFullscreen() : document.mozCancelFullScreen());
@@ -393,9 +356,36 @@ document.addEventListener('DOMContentLoaded', () => {
     populateMatchDurations(); populateWeightClasses('Male'); renderPlayerInputs();
     els.playerCountSelect.addEventListener('change', renderPlayerInputs);
     els.genderSelect.addEventListener('change', () => populateWeightClasses(els.genderSelect.value));
+    
+    // Setup file handling listener
+    els.playerGrid.addEventListener('change', (event) => {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement)) return;
+        if (input.type !== 'file' || !input.dataset.playerFlag) return;
+        const index = Number(input.dataset.playerFlag);
+        const file = input.files && input.files[0];
+        if (!file) {
+            delete state.playerFlags[index];
+            const preview = els.playerGrid.querySelector(`.player-flag-preview[data-player-flag-preview="${index}"]`);
+            if (preview) { preview.removeAttribute('src'); preview.style.display = 'none'; }
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = typeof reader.result === 'string' ? reader.result : '';
+            state.playerFlags[index] = result;
+            const preview = els.playerGrid.querySelector(`.player-flag-preview[data-player-flag-preview="${index}"]`);
+            if (preview) { preview.src = result; preview.style.display = 'block'; }
+        };
+        reader.readAsDataURL(file);
+    });
+
     els.startTournamentBtn.addEventListener('click', () => {
         const inputs = els.playerGrid.querySelectorAll('input[data-player-index]');
-        const playerConfigs = Array.from(inputs).map((input, idx) => ({ name: input.value.trim() || (idx % 2 === 0 ? 'SHIRO' : 'AKA'), flag: null }));
+        const playerConfigs = Array.from(inputs).map((input, idx) => ({ 
+            name: input.value.trim() || (idx % 2 === 0 ? 'SHIRO' : 'AKA'), 
+            flag: state.playerFlags[idx] || null 
+        }));
         state.tournament.playerCount = playerConfigs.length;
         state.tournament.players = playerConfigs;
         state.tournament.active = { roundIndex: 0, matchIndex: 0 };
@@ -409,28 +399,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const team = btn.dataset.team; const delta = Number(btn.dataset.points);
         state.scores[team] = Math.max(0, state.scores[team] + delta);
         els.aoScore.textContent = state.scores.ao; els.akaScore.textContent = state.scores.aka;
-        recordLog(`${team.toUpperCase()} score ${delta > 0 ? '+' : ''}${delta} → ${state.scores[team]}`);
     }));
 
     els.penaltyButtons.forEach(btn => btn.addEventListener('click', () => handlePenalty(btn)));
     
-    // Fix 1: Declare OPPONENT as winner when KO button is clicked
+    // Knockout Logic (Opponent wins)
     els.koButtons.forEach(btn => btn.addEventListener('click', () => {
         const sideClicked = btn.dataset.team;
         const winnerTeam = sideClicked === 'ao' ? 'aka' : 'ao';
         const winnerName = winnerTeam === 'ao' ? els.aoNameInput.value : els.akaNameInput.value;
         state.pendingDecision = { type: 'KNOCKOUT', winnerTeam: winnerTeam };
         els.decisionTitle.textContent = "⚠️ Confirm KNOCKOUT";
-        els.decisionMessage.textContent = `Declare opponent (${winnerName}) the winner by Knockout?`;
+        els.decisionMessage.textContent = `Are you sure you want to declare the opponent (${winnerName}) the winner by Knockout?`;
         els.decisionConfirmBtn.textContent = "OK";
         els.decisionCancelBtn.textContent = "Cancel";
         els.decisionModal.classList.remove('hidden');
     }));
 
-    els.timerPlusBtn.addEventListener('click', () => { state.timer.remaining++; els.timerDisplay.textContent = formatClock(state.timer.remaining); recordLog('Timer adjusted: +1s'); });
-    els.timerMinusBtn.addEventListener('click', () => { state.timer.remaining = Math.max(0, state.timer.remaining - 1); els.timerDisplay.textContent = formatClock(state.timer.remaining); recordLog('Timer adjusted: -1s'); });
+    els.timerPlusBtn.addEventListener('click', () => { state.timer.remaining++; els.timerDisplay.textContent = formatClock(state.timer.remaining); });
+    els.timerMinusBtn.addEventListener('click', () => { state.timer.remaining = Math.max(0, state.timer.remaining - 1); els.timerDisplay.textContent = formatClock(state.timer.remaining); });
     els.startPauseBtn.addEventListener('click', () => state.timer.ticking ? stopTimer() : startTimer());
-    els.resetBtn.addEventListener('click', () => { stopTimer(); prepareMatch(); recordLog('Match reset'); });
+    els.resetBtn.addEventListener('click', () => { stopTimer(); prepareMatch(); });
     els.aoSenshu.addEventListener('click', () => toggleSenshu(els.aoSenshu));
     els.akaSenshu.addEventListener('click', () => toggleSenshu(els.akaSenshu));
     els.swapBtn.addEventListener('click', () => {
@@ -439,25 +428,30 @@ document.addEventListener('DOMContentLoaded', () => {
         els.aoScore.textContent = state.scores.ao; els.akaScore.textContent = state.scores.aka;
         const aoS = els.aoSenshu.classList.contains('active'); const akaS = els.akaSenshu.classList.contains('active');
         els.aoSenshu.classList.toggle('active', akaS); els.akaSenshu.classList.toggle('active', aoS);
-        recordLog('Sides swapped');
     });
 
     els.fullscreenBtn.addEventListener('click', () => getFullscreenElement() ? exitFullscreen() : requestFullscreen(els.appShell));
     els.winnerNextBtn.addEventListener('click', () => {
         els.winnerModal.classList.add('hidden');
         const active = state.tournament.active;
-        if (active.matchIndex + 1 < state.tournament.rounds[active.roundIndex].length) active.matchIndex++;
-        else if (active.roundIndex + 1 < state.tournament.rounds.length) { active.roundIndex++; active.matchIndex = 0; }
-        else { showToast('Tournament Over'); return; }
+        if (active.matchIndex + 1 < state.tournament.rounds[active.roundIndex].length) {
+            active.matchIndex++;
+        } else if (active.roundIndex + 1 < state.tournament.rounds.length) {
+            active.roundIndex++;
+            active.matchIndex = 0;
+        } else {
+            showToast('Tournament Over');
+            return;
+        }
         state.roundCount++; els.roundNumber.textContent = state.roundCount; prepareMatch();
     });
 
-    els.historyTriggers.forEach(btn => btn.addEventListener('click', openHistoryModal));
-    els.historyClose.addEventListener('click', closeHistoryModal);
-    els.eraseHistoryBtn.addEventListener('click', eraseHistory);
     els.decisionConfirmBtn.addEventListener('click', confirmDrasticAction);
     els.decisionCancelBtn.addEventListener('click', () => { els.decisionModal.classList.add('hidden'); state.pendingDecision = null; });
     els.winnerModalClose.addEventListener('click', () => els.winnerModal.classList.add('hidden'));
+    els.historyTriggers.forEach(btn => btn.addEventListener('click', openHistoryModal));
+    els.historyClose.addEventListener('click', closeHistoryModal);
+    els.eraseHistoryBtn.addEventListener('click', eraseHistory);
     
     lockControls(true);
 });

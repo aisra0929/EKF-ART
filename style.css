@@ -124,6 +124,7 @@ body {
 .player-name-grid input { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #050505; color: white; font-size: 0.95rem; }
 .player-input { display: flex; flex-direction: column; gap: 4px; }
 .player-flag-row { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #999; }
+.player-flag-row input[type="file"] { font-size: 0.75rem; }
 .player-flag-preview { width: 28px; height: 20px; border-radius: 3px; border: 1px solid #333; object-fit: cover; display: none; }
 .setup-actions { margin-top: 25px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
