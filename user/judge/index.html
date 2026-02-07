@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Judge Portal | Official Scoring</title>
+    
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           BULLETPROOF CSS (EMBEDDED)
+           ========================================= */
+        :root {
+            --primary: #1e293b;
+            --accent: #c5a059;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #ffffff;
+            --muted: #94a3b8;
+            --danger: #ef4444; /* Timer Color */
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+        body, html {
+            height: 100vh; width: 100vw;
+            background: var(--bg) !important;
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        /* LOGIN OVERLAY */
+        .login-overlay {
+            position: fixed; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            z-index: 9999; padding: 20px;
+        }
+        .login-card {
+            background: white; color: #0f172a; padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 360px; text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .brand-icon { font-size: 3rem; color: var(--accent); margin-bottom: 15px; }
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        .input-group input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1.1rem; }
+        .btn-primary { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; }
+        .btn-ghost { width: 100%; padding: 12px; background: transparent; color: #64748b; border: 1px solid #e2e8f0; border-radius: 12px; margin-top: 10px; cursor: pointer; }
+
+        /* DASHBOARD LAYOUT */
+        .dashboard { height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+        .header { height: 80px; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; background: var(--primary); border-bottom: 1px solid #334155; }
+        
+        /* TIMER STYLE */
+        .j-timer-box {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: var(--danger);
+            font-size: 2rem;
+            font-weight: 900;
+            padding: 5px 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            min-width: 110px;
+            text-align: center;
+        }
+
+        .content { flex: 1; display: flex; flex-direction: column; padding: 15px; overflow: hidden; }
+
+        .comp-card { background: var(--card); padding: 15px; border-radius: 20px; text-align: center; border: 1px solid #334155; }
+        .label { font-size: 0.6rem; color: var(--accent); font-weight: 800; letter-spacing: 1px; }
+        .comp-card h1 { margin: 5px 0; font-size: 1.7rem; font-weight: 900; }
+        .art-tag { color: var(--muted); font-size: 0.9rem; margin-top: 5px; }
+
+        /* SLOT MACHINE */
+        .slot-wrapper {
+            flex: 1; margin: 15px 0; position: relative;
+            background: #000; border: 3px solid var(--accent); border-radius: 24px; overflow: hidden;
+        }
+        .indicator {
+            position: absolute; top: 50%; left: 0; width: 100%; height: 80px;
+            transform: translateY(-50%); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
+            background: rgba(197, 160, 89, 0.1); pointer-events: none; z-index: 5;
+        }
+        .slot-scroller {
+            height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;
+            padding-top: calc(50% - 40px); padding-bottom: calc(50% - 40px);
+        }
+        .slot-scroller::-webkit-scrollbar { display: none; }
+        .slot-val {
+            height: 80px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; font-weight: 900; color: #334155; scroll-snap-align: center; transition: 0.2s;
+        }
+        .slot-val.active { color: white; font-size: 4rem; text-shadow: 0 0 20px var(--accent); }
+
+        /* FOOTER */
+        .footer { padding-bottom: 20px; display: flex; flex-direction: column; justify-content: center; }
+        .status-msg { text-align: center; color: var(--accent); font-size: 0.7rem; font-weight: 800; margin-bottom: 8px; text-transform: uppercase; }
+        .btn-submit {
+            width: 100%; padding: 20px; border-radius: 50px; border: none; background: var(--accent);
+            color: #000; font-size: 1.3rem; font-weight: 900; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .btn-submit.disabled { opacity: 0.2; filter: grayscale(1); cursor: not-allowed; }
+
+        .pill { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; background: var(--accent); color: #000; }
+        .btn-icon { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="judge-login" class="login-overlay">
+        <div class="login-card">
+            <i class="fas fa-gavel brand-icon"></i>
+            <h2>Judge Login</h2>
+            <div class="input-group">
+                <label>Tournament ID</label>
+                <input type="text" id="login-tid" value="T" placeholder="Txxxx">
+            </div>
+            <div class="input-group">
+                <label>Access Code</label>
+                <input type="password" id="login-code" placeholder="6-Digit Code">
+            </div>
+            <button onclick="handleLogin()" class="btn-primary">Connect to Tournament</button>
+            <button onclick="window.location.href='../../art_page.html'" class="btn-ghost">Exit</button>
+        </div>
+    </div>
+
+    <!-- 2. MAIN DASHBOARD -->
+    <div id="judge-dashboard" class="dashboard hidden">
+        <header class="header">
+            <div class="judge-info">
+                <span id="judge-id-tag" class="pill">JUDGE</span>
+            </div>
+            
+            <!-- THE LIVE TIMER -->
+            <div id="j-timer" class="j-timer-box">00:00</div>
+            
+            <button onclick="location.reload()" class="btn-icon"><i class="fas fa-sign-out-alt"></i></button>
+        </header>
+
+        <main class="content">
+            <div class="comp-card">
+                <div class="label">CURRENT COMPETITOR</div>
+                <h1 id="comp-name">Awaiting...</h1>
+                <div class="art-tag">
+                    <i class="fas fa-scroll"></i> <span id="art-type">Standard</span>
+                </div>
+            </div>
+
+            <div class="slot-wrapper">
+                <div class="indicator"></div>
+                <div class="slot-scroller" id="slot-scroller">
+                    <!-- Values Generated by JS -->
+                </div>
+            </div>
+
+            <div class="footer">
+                <div id="status-msg" class="status-msg">READY</div>
+                <button id="btn-submit" onclick="submitScore()" class="btn-submit disabled" disabled>
+                    SUBMIT <span id="display-val">5.0</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* =========================================
+           BULLETPROOF JS (EMBEDDED)
+           ========================================= */
+        const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
+        const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let state = {
+            activeT: null,
+            user: null,
+            selectedScore: "5.0",
+            alreadySubmitted: false
+        };
+
+        async function handleLogin() {
+            const tid = document.getElementById('login-tid').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+
+            const { data: u, error } = await _client.from('judges').select('*, tournaments(*)').eq('judge_code', code).single();
+
+            if (u && u.tournaments.short_id === tid && u.role === 'judge') {
+                state.activeT = u.tournaments;
+                state.user = u;
+                
+                document.getElementById('judge-login').classList.add('hidden');
+                document.getElementById('judge-dashboard').classList.remove('hidden');
+                
+                initializeScroller();
+                initRealtime();
+                refreshStatus();
+            } else {
+                alert("Invalid Credentials.");
+            }
+        }
+
+        function initializeScroller() {
+            const scroller = document.getElementById('slot-scroller');
+            scroller.innerHTML = "";
+            
+            const values = [];
+            for (let i = 1; i <= 5; i++) values.push(i.toFixed(1));
+            for (let i = 51; i <= 100; i++) values.push((i / 10).toFixed(1));
+
+            values.forEach(v => {
+                const d = document.createElement('div');
+                d.className = 'slot-val';
+                d.innerText = v;
+                scroller.appendChild(d);
+            });
+
+            scroller.onscroll = () => {
+                const idx = Math.round(scroller.scrollTop / 80);
+                Array.from(scroller.children).forEach((c, i) => {
+                    if(i === idx) {
+                        c.classList.add('active');
+                        state.selectedScore = c.innerText;
+                        document.getElementById('display-val').innerText = state.selectedScore;
+                    } else {
+                        c.classList.remove('active');
+                    }
+                });
+            };
+            setTimeout(() => scroller.scrollTop = 4 * 80, 200);
+        }
+
+        function initRealtime() {
+            _client.channel('judge-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, payload => {
+                if(payload.new.id === state.activeT.id) {
+                    state.activeT = payload.new;
+                    refreshStatus();
+                }
+            }).subscribe();
+        }
+
+        async function refreshStatus() {
+            const t = state.activeT;
+            document.getElementById('judge-id-tag').innerText = `JUDGE: ${state.user.judge_code}`;
+
+            const { data: c } = await _client.from('competitors').select('*').eq('id', t.current_competitor_id).single();
+            if(c) {
+                document.getElementById('comp-name').innerText = c.name;
+                document.getElementById('art-type').innerText = c.art_type || "Standard";
+                const { data: score } = await _client.from('scores').select('id').eq('competitor_id', c.id).eq('judge_id', state.user.id).single();
+                state.alreadySubmitted = !!score;
+            }
+
+            const btn = document.getElementById('btn-submit');
+            const msg = document.getElementById('status-msg');
+
+            if (t.is_locked) {
+                btn.disabled = true; btn.classList.add('disabled');
+                msg.innerText = "SUBMISSIONS LOCKED";
+            } else if (state.alreadySubmitted) {
+                btn.disabled = true; btn.classList.add('disabled');
+                msg.innerText = "SCORE SUBMITTED";
+            } else {
+                btn.disabled = false; btn.classList.remove('disabled');
+                msg.innerText = "READY TO SUBMIT";
+            }
+        }
+
+        async function submitScore() {
+            if (state.alreadySubmitted || state.activeT.is_locked) return;
+            if(!confirm(`Submit ${state.selectedScore}?`)) return;
+
+            const { error } = await _client.from('scores').insert({
+                tournament_id: state.activeT.id,
+                competitor_id: state.activeT.current_competitor_id,
+                judge_id: state.user.id,
+                score_value: parseFloat(state.selectedScore)
+            });
+
+            if(!error) {
+                state.alreadySubmitted = true;
+                refreshStatus();
+                alert("Score Published!");
+            }
+        }
+
+        // --- THE REALTIME TIMER LOGIC ---
+        setInterval(() => {
+            if (state.activeT) {
+                const t = state.activeT;
+                let displayTime = t.remaining_time_seconds;
+
+                // If running, calculate offset from start time
+                if (t.timer_status === 'running' && t.timer_started_at) {
+                    const elapsed = Math.floor((new Date() - new Date(t.timer_started_at)) / 1000);
+                    displayTime = Math.max(0, t.remaining_time_seconds - elapsed);
+                }
+
+                const mins = Math.floor(displayTime / 60).toString().padStart(2, '0');
+                const secs = (displayTime % 60).toString().padStart(2, '0');
+                document.getElementById('j-timer').innerText = `${mins}:${secs}`;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

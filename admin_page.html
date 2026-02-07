@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Federation Dashboard</title>
+    <link rel="stylesheet" href="art_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-dashboard">
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-logo"><i class="fas fa-shield-alt"></i> ADMIN PANEL</div>
+            <nav class="sidebar-nav">
+                <button id="nav-dash" class="active" onclick="location.reload()"><i class="fas fa-th-large"></i> Dashboard</button>
+                <button id="nav-create" onclick="openCreateModal()"><i class="fas fa-plus-square"></i> New Tournament</button>
+                <button onclick="window.location.href='art_page.html'"><i class="fas fa-sign-out-alt"></i> Exit</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h2>Tournaments <span id="t-count" class="badge">0</span></h2>
+                <button onclick="openCreateModal()" class="primary-btn">+ Create Tournament</button>
+            </header>
+            <div id="tournament-grid" class="tournament-grid">
+                <!-- Cards will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- CREATE / EDIT MODAL -->
+    <div id="manage-modal" class="modal hidden">
+        <div class="modal-content wider">
+            <h2 id="modal-title">Tournament Configuration</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Tournament Name</label>
+                    <input type="text" id="t-name" placeholder="e.g. National Art Championship">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Performance Time</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="number" id="t-min" placeholder="Min" min="0" value="3">
+                            <span>:</span>
+                            <input type="number" id="t-sec" placeholder="Sec" min="0" max="59" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Number of Judges</label>
+                        <input type="number" id="t-jcount" value="3" min="1">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Competitors (One name per line)</label>
+                    <textarea id="t-competitors" rows="6" placeholder="Competitor 1&#10;Competitor 2"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="saveTournament()" class="action-btn">Save & Launch</button>
+                <button onclick="closeModal('manage-modal')" class="ghost-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CODES VIEW MODAL (The one you were missing) -->
+    <div id="codes-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Access Credentials</h2>
+            <p style="font-size: 0.8rem; color: #666; margin-bottom: 15px;">Distribution codes for officials:</p>
+            <div id="codes-display" class="code-box" style="background:#111; color:#00ffcc; padding:20px; border-radius:10px; font-family:monospace; text-align:left; white-space:pre-wrap;"></div>
+            <button onclick="closeModal('codes-modal')" class="action-btn" style="margin-top:20px;">Close</button>
+        </div>
+    </div>
+
+    <script src="admin_script.js"></script>
+    <script>
+        if(!sessionStorage.getItem('adminAuth')) window.location.href='art_page.html';
+        window.onload = loadAdminDashboard;
+    </script>
+</body>
+</html>

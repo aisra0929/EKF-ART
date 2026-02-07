@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EKF Official Scoreboard | Live Results</title>
+    
+    <!-- External Resources -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           VIEWER CSS - FEDERATION GRADE
+           ========================================= */
+        :root {
+            --primary: #1e293b;
+            --accent: #c5a059;
+            --bg: #000000;
+            --card: #111111;
+            --text: #ffffff;
+            --gold: #ffc107;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        /* 1. SELECTION SCREEN */
+        .selection-screen {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .selection-screen h1 { margin-bottom: 30px; font-size: 2rem; color: var(--accent); }
+
+        .tournament-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .t-btn {
+            background: var(--card);
+            border: 2px solid #333;
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .t-btn:hover { border-color: var(--accent); background: #1a1a1a; }
+        .t-btn h3 { font-size: 1.4rem; margin-bottom: 5px; }
+        .t-btn span { font-size: 0.8rem; color: #888; }
+        .status-tag { padding: 4px 10px; border-radius: 20px; background: #222; font-size: 0.7rem; font-weight: bold; }
+
+        /* 2. MAIN SCOREBOARD LAYOUT */
+        .scoreboard-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header Style from Image */
+        .sb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: linear-gradient(to bottom, #111, #000);
+            border-bottom: 4px solid #222;
+        }
+
+        .flag-img { height: 80px; width: auto; object-fit: contain; }
+        .header-title { text-align: center; }
+        .header-title h1 { font-size: 3rem; font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .header-title p { color: var(--accent); letter-spacing: 5px; font-weight: bold; margin-top: -5px; }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Competitor Panel */
+        .competitor-panel {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 2px solid #222;
+        }
+        .competitor-panel h2 { font-size: 1rem; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+        .competitor-panel h1 { font-size: 4rem; font-weight: 800; margin: 10px 0; }
+        .art-type-label { font-size: 1.2rem; color: var(--accent); font-weight: bold; opacity: 0.8; }
+
+        /* Score Boxes (Large) */
+        .score-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .judge-box {
+            background: #000;
+            border: 3px solid #333;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        .judge-box .j-label { font-size: 0.7rem; color: #888; margin-bottom: 5px; }
+        .judge-box .j-val { font-size: 3.5rem; font-weight: 900; }
+
+        .total-box {
+            background: #000;
+            border: 5px solid var(--accent);
+            width: 250px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(197, 160, 89, 0.2);
+        }
+        .total-box .t-label { font-size: 1rem; color: var(--accent); font-weight: bold; }
+        .total-box .t-val { font-size: 7rem; font-weight: 900; line-height: 1; }
+
+        /* Standing Matrix */
+        .matrix-container {
+            margin-top: auto;
+            background: #080808;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: center; padding: 15px; color: #555; font-size: 0.8rem; text-transform: uppercase; border-bottom: 2px solid #222; }
+        td { padding: 15px; text-align: center; border-bottom: 1px solid #111; font-size: 1.1rem; }
+        .active-row { background: rgba(197, 160, 89, 0.1); border-left: 4px solid var(--accent); }
+        .winner-row { color: var(--gold); font-weight: bold; }
+
+        /* Celebration Popup */
+        .winner-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; animation: reveal 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes reveal { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        .winner-overlay i { font-size: 8rem; color: var(--gold); margin-bottom: 20px; }
+        .winner-overlay h1 { font-size: 4rem; text-align: center; margin-bottom: 10px; }
+        .winner-overlay p { font-size: 1.5rem; color: var(--accent); }
+        .close-btn { margin-top: 40px; padding: 15px 40px; border-radius: 30px; border: none; background: #fff; cursor: pointer; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .header-title h1 { font-size: 1.5rem; }
+            .flag-img { height: 40px; }
+            .competitor-panel h1 { font-size: 2.5rem; }
+            .total-box { width: 180px; height: 140px; }
+            .total-box .t-val { font-size: 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. TOURNAMENT SELECTION SCREEN -->
+    <div id="view-selection" class="selection-screen">
+        <img src="assets/left-flag.png" style="height: 60px; margin-bottom: 20px;">
+        <h1>EKF LIVE TOURNAMENTS</h1>
+        <div id="active-tournaments" class="tournament-list">
+            <!-- Loading -->
+            <p>Scanning for active sessions...</p>
+        </div>
+    </div>
+
+    <!-- 2. MAIN LIVE SCOREBOARD -->
+    <div id="view-board" class="scoreboard-container hidden">
+        <header class="sb-header">
+            <img src="assets/left-flag.png" class="flag-img" onerror="this.src='https://via.placeholder.com/100x80?text=FLAG'">
+            <div class="header-title">
+                <h1>EKF SCOREBOARD</h1>
+                <p id="board-tournament-name">OFFICIAL TOURNAMENT</p>
+            </div>
+            <img src="assets/right-flag.png" class="flag-img" onerror="this.src='https://via.placeholder.com/100x80?text=FLAG'">
+        </header>
+
+        <main class="main-content">
+            <!-- Performer Details -->
+            <section class="competitor-panel">
+                <h2>Currently Performing</h2>
+                <h1 id="current-comp-name">---</h1>
+                <div class="art-type-label" id="current-art-type">---</div>
+            </section>
+
+            <!-- Live Score Box Display -->
+            <section id="live-scores-grid" class="score-row">
+                <!-- Judge boxes go here -->
+            </section>
+
+            <!-- Total Score Box -->
+            <section class="score-row">
+                <div class="total-box">
+                    <span class="t-label">TOTAL SCORE</span>
+                    <span class="t-val" id="current-total">0.0</span>
+                </div>
+            </section>
+
+            <!-- Full Standings Matrix -->
+            <section class="matrix-container">
+                <table id="matrix-table">
+                    <thead>
+                        <tr id="matrix-head">
+                            <!-- Headers -->
+                        </tr>
+                    </thead>
+                    <tbody id="matrix-body">
+                        <!-- Full Standings -->
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <!-- 3. WINNER CELEBRATION -->
+    <div id="winner-popup" class="winner-overlay hidden">
+        <i class="fas fa-trophy"></i>
+        <h1>CHAMPION</h1>
+        <p id="winner-name-display">COMPETITOR NAME</p>
+        <button onclick="location.reload()" class="close-btn">BACK TO TOURNAMENTS</button>
+    </div>
+
+    <script>
+        /* =========================================
+           VIEWER JS - REALTIME LOGIC
+           ========================================= */
+        const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
+        const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let state = {
+            activeT: null,
+            competitors: [],
+            judges: [],
+            scores: []
+        };
+
+        // --- STEP 1: LOAD ACTIVE TOURNAMENTS ---
+        async function fetchTournaments() {
+            const { data, error } = await _client
+                .from('tournaments')
+                .select('*')
+                .neq('status', 'archived')
+                .order('created_at', { ascending: false });
+
+            const listDiv = document.getElementById('active-tournaments');
+            if(data && data.length > 0) {
+                listDiv.innerHTML = data.map(t => `
+                    <div class="t-btn" onclick="selectTournament('${t.id}')">
+                        <div>
+                            <h3>${t.name}</h3>
+                            <span>ID: ${t.short_id}</span>
+                        </div>
+                        <span class="status-tag">${t.status.toUpperCase()}</span>
+                    </div>
+                `).join('');
+            } else {
+                listDiv.innerHTML = "<p>No active tournaments found.</p>";
+            }
+        }
+
+        // --- STEP 2: SELECT & SETUP ---
+        async function selectTournament(id) {
+            const { data: t } = await _client.from('tournaments').select('*').eq('id', id).single();
+            state.activeT = t;
+            
+            document.getElementById('view-selection').classList.add('hidden');
+            document.getElementById('view-board').classList.remove('hidden');
+            document.getElementById('board-tournament-name').innerText = t.name;
+
+            await loadData();
+            initRealtime();
+        }
+
+        async function loadData() {
+            const tid = state.activeT.id;
+            const { data: comps } = await _client.from('competitors').select('*').eq('tournament_id', tid).order('order_index');
+            const { data: judges } = await _client.from('judges').select('*').eq('tournament_id', tid).eq('role', 'judge');
+            const { data: scores } = await _client.from('scores').select('*').eq('tournament_id', tid);
+
+            state.competitors = comps;
+            state.judges = judges;
+            state.scores = scores;
+
+            renderMatrix();
+            updateLiveDisplay();
+        }
+
+        // --- STEP 3: REALTIME SYNC ---
+        function initRealtime() {
+            _client.channel('viewer-room')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, payload => {
+                if(payload.new.id === state.activeT.id) {
+                    state.activeT = payload.new;
+                    if(state.activeT.status === 'ended') showWinner();
+                    updateLiveDisplay();
+                }
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, payload => {
+                if(payload.new.tournament_id === state.activeT.id) {
+                    const idx = state.scores.findIndex(s => s.id === payload.new.id);
+                    if(idx > -1) state.scores[idx] = payload.new; else state.scores.push(payload.new);
+                    updateLiveDisplay();
+                    renderMatrix();
+                }
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'competitors' }, payload => {
+                const idx = state.competitors.findIndex(c => c.id === payload.new.id);
+                if(idx > -1) state.competitors[idx] = payload.new;
+                updateLiveDisplay();
+                renderMatrix();
+            })
+            .subscribe();
+        }
+
+        // --- STEP 4: UI UPDATES ---
+        function updateLiveDisplay() {
+            const t = state.activeT;
+            const currentComp = state.competitors.find(c => c.id === t.current_competitor_id);
+            
+            if(currentComp) {
+                document.getElementById('current-comp-name').innerText = currentComp.name;
+                document.getElementById('current-art-type').innerText = currentComp.art_type || "No Art Defined";
+
+                // Filter scores for current competitor
+                const currScores = state.scores.filter(s => s.competitor_id === currentComp.id);
+                
+                // Render Judge Boxes
+                const grid = document.getElementById('live-scores-grid');
+                let total = 0;
+                grid.innerHTML = state.judges.map((j, i) => {
+                    const s = currScores.find(sc => sc.judge_id === j.id);
+                    const val = s ? s.score_value.toFixed(1) : '-';
+                    if(s) total += parseFloat(s.score_value);
+                    return `
+                        <div class="judge-box">
+                            <span class="j-label">JUDGE ${i+1}</span>
+                            <span class="j-val">${val}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('current-total').innerText = total.toFixed(1);
+            }
+        }
+
+        function renderMatrix() {
+            const head = document.getElementById('matrix-head');
+            const body = document.getElementById('matrix-body');
+
+            // Table Head
+            let h = `<th>Competitor</th>`;
+            state.judges.forEach((j, i) => h += `<th>J${i+1}</th>`);
+            h += `<th>TOTAL</th>`;
+            head.innerHTML = h;
+
+            // Table Body
+            body.innerHTML = state.competitors.map(c => {
+                const isCurr = c.id === state.activeT.current_competitor_id;
+                let rowTotal = 0;
+                let judgeCells = state.judges.map(j => {
+                    const s = state.scores.find(sc => sc.competitor_id === c.id && sc.judge_id === j.id);
+                    if(s) rowTotal += parseFloat(s.score_value);
+                    return `<td>${s ? s.score_value.toFixed(1) : '-'}</td>`;
+                }).join('');
+
+                return `
+                    <tr class="${isCurr ? 'active-row' : ''}">
+                        <td style="text-align:left; padding-left:20px;">${c.name}</td>
+                        ${judgeCells}
+                        <td style="font-weight:900; color:var(--accent);">${rowTotal.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function showWinner() {
+            // Find highest total
+            let winner = { name: "N/A", score: 0 };
+            state.competitors.forEach(c => {
+                const cScores = state.scores.filter(s => s.competitor_id === c.id);
+                const total = cScores.reduce((acc, s) => acc + parseFloat(s.score_value), 0);
+                if(total > winner.score) winner = { name: c.name, score: total };
+            });
+
+            document.getElementById('winner-name-display').innerText = winner.name;
+            document.getElementById('winner-popup').classList.remove('hidden');
+        }
+
+        // Init
+        window.onload = fetchTournaments;
+    </script>
+</body>
+</html>

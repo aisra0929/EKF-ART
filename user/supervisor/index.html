@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Command | Federation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="sup-login" class="full-screen-center">
+        <div class="login-card">
+            <i class="fas fa-user-shield brand-icon"></i>
+            <h2>Supervisor Portal</h2>
+            <p>Enter the Tournament ID and Access Code</p>
+            <div class="input-field">
+                <label>Tournament ID</label>
+                <input type="text" id="login-tid" value="T" placeholder="Txxxx">
+            </div>
+            <div class="input-field">
+                <label>Access Code</label>
+                <input type="password" id="login-code" placeholder="6-Digit Code">
+            </div>
+            <!-- Inside the login-card div -->
+<button onclick="handleLogin()" class="btn-primary full-width">Connect to Tournament</button>
+<button onclick="window.location.href='../../art_page.html'" class="btn-ghost">Exit</button>
+        </div>
+    </div>
+
+    <!-- Live Dashboard -->
+    <div id="sup-dashboard" class="hidden">
+        <header class="sup-header">
+            <div class="tournament-info">
+                <h1 id="active-t-name">Tournament Title</h1>
+                <div class="status-indicator">
+                    <span id="t-status" class="pill">STATUS</span>
+                    <span id="t-id-display" class="pill ghost">ID</span>
+                </div>
+            </div>
+            <div class="timer-display" id="main-timer">00:00</div>
+            <div class="header-actions">
+                <button onclick="openLogModal()" class="btn-secondary"><i class="fas fa-list"></i> Logs</button>
+                <!-- New Exit Button -->
+                <button onclick="leaveTournament()" class="btn-exit-live"><i class="fas fa-door-open"></i> Leave</button>
+            </div>
+        </header>
+
+        <main class="matrix-area">
+            <div class="matrix-container">
+                <table id="score-matrix">
+                    <thead>
+                        <tr id="matrix-head">
+                            <!-- Dynamic Content -->
+                        </tr>
+                    </thead>
+                    <tbody id="matrix-body">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+        <footer class="sup-controls">
+            <div class="control-group">
+                <button id="btn-start" onclick="supervisorAction('start')" class="ctrl-btn" title="Start Tournament"><i class="fas fa-flag-checkered"></i>                
+                <button id="btn-timer" onclick="supervisorAction('toggle-timer')" class="ctrl-btn" title="Play/Pause Timer"><i class="fas fa-pause"></i></button>
+                <button id="btn-next" onclick="supervisorAction('next')" class="ctrl-btn" title="Stop & Advance"><i class="fas fa-step-forward"></i></button>
+                <div class="divider"></div>
+                <button id="btn-lock" onclick="supervisorAction('toggle-lock')" class="ctrl-btn" title="Lock/Unlock Submissions"><i class="fas fa-unlock"></i></button>
+            </div>
+            
+            <div class="action-group">
+                <button id="btn-publish-score" onclick="supervisorAction('publish-score')" class="btn-action disabled">Publish Score</button>
+                <button id="btn-publish-winner" onclick="supervisorAction('publish-winner')" class="btn-action winner hidden">Publish Winner</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal hidden">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Tournament Logs</h2>
+                <button onclick="closeModal('log-modal')" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body" id="log-table-container">
+                <!-- Log data goes here -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="exportToPDF()" class="btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Popup -->
+    <div id="celebration" class="celebration-overlay hidden">
+        <div class="celebration-card">
+            <i class="fas fa-trophy"></i>
+            <h1>Tournament Complete!</h1>
+            <p id="winner-text">The official results have been published.</p>
+            <button onclick="location.reload()" class="btn-primary">Finish</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

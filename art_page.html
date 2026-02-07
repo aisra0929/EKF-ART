@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federation Portal | Art Division</title>
+    <link rel="stylesheet" href="art_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="portal-body">
+    
+    <nav class="portal-nav">
+        <button onclick="window.location.href='index.html'" class="nav-back">
+            <i class="fas fa-chevron-left"></i> Home
+        </button>
+        <!-- Admin Access Shield -->
+        <div class="admin-access-icon" onclick="window.location.href='user/admin/index.html'" title="Admin Dashboard">
+            <i class="fas fa-user-shield"></i>
+        </div>
+    </nav>
+
+    <main class="portal-center">
+        <div id="role-selection" class="portal-card">
+            <div class="brand-header">
+                <i class="fas fa-award"></i>
+                <h1>OFFICIAL TOURNAMENT PORTAL</h1>
+                <p>Ethiopian Karate Federation - Art Division</p>
+            </div>
+            
+            <div class="role-grid">
+                <!-- Links to refactored subfolders -->
+                <button onclick="window.location.href='user/viewer/index.html'" class="role-btn">
+                    <i class="fas fa-tv"></i> 
+                    <span>Viewer Scoreboard</span>
+                </button>
+                
+                <button onclick="window.location.href='user/judge/index.html'" class="role-btn">
+                    <i class="fas fa-gavel"></i> 
+                    <span>Judge Portal</span>
+                </button>
+                
+                <button onclick="window.location.href='user/supervisor/index.html'" class="role-btn">
+                    <i class="fas fa-user-check"></i> 
+                    <span>Supervisor Control</span>
+                </button>
+            </div>
+            
+            <div class="portal-footer">
+                <p>&copy; 2026 Ethiopian Karate Federation. All Rights Reserved.</p>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

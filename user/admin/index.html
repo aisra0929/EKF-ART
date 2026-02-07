@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Federation Management</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fas fa-shield-halved"></i>
+                <span>EKF ADMIN</span>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-link active" onclick="location.reload()">
+                    <i class="fas fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-link" onclick="openCreateModal()">
+                    <i class="fas fa-plus-circle"></i> New Tournament
+                </button>
+                <div class="nav-spacer"></div>
+                <button class="nav-link logout" onclick="window.location.href='../../art_page.html'">
+                    <i class="fas fa-sign-out-alt"></i> Exit Portal
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="header-info">
+                    <h1>Tournament Overview</h1>
+                    <p>Manage and monitor active federation events.</p>
+                </div>
+                <div class="stats-mini">
+                    <span class="stat-item">Total Events: <strong id="t-count">0</strong></span>
+                </div>
+            </header>
+
+            <section id="tournament-grid" class="tournament-grid">
+                <!-- Cards loaded dynamically -->
+            </section>
+        </main>
+    </div>
+
+    <!-- Create/Edit Tournament Modal -->
+    <div id="manage-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Tournament Configuration</h2>
+                <button class="close-modal" onclick="closeModal('manage-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-section">
+                    <label>General Information</label>
+                    <input type="text" id="t-name" class="full-input" placeholder="Tournament Name (e.g. National Kata Cup)">
+                    
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Gender</label>
+                            <select id="t-gender">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Kata Type</label>
+                            <select id="t-kata-type">
+                                <option value="Single">Single</option>
+                                <option value="Group">Group</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label>Timing & Officials</label>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Performance Time</label>
+                            <div class="time-inputs">
+                                <input type="number" id="t-min" value="3" min="0">
+                                <span>:</span>
+                                <input type="number" id="t-sec" value="0" min="0" max="59">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Number of Judges</label>
+                            <select id="t-jcount">
+                                <option value="3">3 Judges</option>
+                                <option value="5" selected>5 Judges</option>
+                                <option value="7">7 Judges</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label>Competitors Selection</label>
+                    <div class="input-group">
+                        <label>Size of Bracket</label>
+                        <select id="t-comp-size" onchange="generateCompetitorFields()">
+                            <option value="2">2 Competitors</option>
+                            <option value="4">4 Competitors</option>
+                            <option value="8" selected>8 Competitors</option>
+                            <option value="16">16 Competitors</option>
+                            <option value="32">32 Competitors</option>
+                            <option value="64">64 Competitors</option>
+                        </select>
+                    </div>
+                    <div id="dynamic-competitors" class="competitor-scroll-list">
+                        <!-- Dynamic inputs appear here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-btn" onclick="saveTournament()" class="btn-primary">Initialize Tournament</button>
+                <button onclick="closeModal('manage-modal')" class="btn-ghost">Cancel</button>                
+            </div>
+        </div>
+    </div>
+
+    <!-- Credentials View Modal -->
+    <div id="codes-modal" class="modal hidden">
+        <div class="modal-content narrow">
+            <div class="modal-header">
+                <h2>Access Credentials</h2>
+                <button class="close-modal" onclick="closeModal('codes-modal')">&times;</button>
+            </div>
+            <div id="codes-display" class="credential-box"></div>
+            <div class="modal-footer">
+                <button onclick="closeModal('codes-modal')" class="btn-primary">Close Credentials</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

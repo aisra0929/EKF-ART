@@ -1,0 +1,138 @@
+:root {
+    --primary: #1a237e;      /* Federation Blue */
+    --gold: #c5a059;         /* Official Gold */
+    --dark: #0f172a;         /* Deep Slate */
+    --white: #ffffff;
+    --bg-gradient: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body, html {
+    height: 100%;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-gradient);
+    color: var(--white);
+    overflow: hidden;
+}
+
+.portal-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* NAVIGATION */
+.portal-nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 25px 40px;
+    z-index: 100;
+}
+
+.nav-back {
+    color: var(--white);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: 0.3s;
+}
+
+.nav-back:hover { background: var(--white); color: var(--dark); }
+
+.admin-access-icon {
+    color: var(--white);
+    font-size: 2rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: 0.3s;
+}
+
+.admin-access-icon:hover { opacity: 1; color: var(--gold); transform: scale(1.1); }
+
+/* PORTAL CARD */
+.portal-card {
+    background: var(--white);
+    color: var(--dark);
+    padding: 50px 40px;
+    border-radius: 32px;
+    text-align: center;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.brand-header i {
+    font-size: 4rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+}
+
+.brand-header h1 {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+.brand-header p {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ROLE GRID */
+.role-grid {
+    display: grid;
+    gap: 15px;
+    margin: 40px 0;
+}
+
+.role-btn {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 25px;
+    border-radius: 16px;
+    border: 2px solid #f1f5f9;
+    background: var(--white);
+    cursor: pointer;
+    transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: left;
+}
+
+.role-btn i {
+    font-size: 1.8rem;
+    color: var(--primary);
+    width: 40px;
+    text-align: center;
+}
+
+.role-btn span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.role-btn:hover {
+    border-color: var(--accent);
+    background: #fffcf5;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.portal-footer {
+    margin-top: 20px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
