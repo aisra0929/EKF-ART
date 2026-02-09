@@ -1,6 +1,6 @@
 {
-  "name": "Ashihara Scoreboard",
-  "short_name": "Ashihara Score",
+  "name": "EKF Scoreboard",
+  "short_name": "EKF Score",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",

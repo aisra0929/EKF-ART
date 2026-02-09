@@ -16,40 +16,30 @@
     <!-- ========================== -->
     <!-- LANDING PAGE SECTION       -->
     <!-- ========================== -->
+
     <section id="landing-page" class="landing-container">
         <div class="split-screen left-split">
             <div class="landing-content">
-                <h1 class="main-headline">WELCOME TO EKF<br>SCOREBOARD</h1>
+                <h1 class="main-headline">WELCOME TO ASHIHARA<br>SCOREBOARD</h1>
                 
                 <div class="landing-buttons">
                     <button id="enter-site-btn" class="landing-btn filled">Start Tournament</button>
-<button onclick="window.location.href='art_page.html'" class="landing-btn filled" style="margin-left: 10px; border-color: #000000; color: #000000;">Art Tournament</button>
+                    <!-- New Feature Button -->
+                    <button onclick="window.location.href='art_page.html'" class="landing-btn filled" style="margin-left: 10px; border-color: #00bcd4; color: #00bcd4;">Art Tournament</button>
                 </div>
 
                 <p class="landing-desc">
-                    Professional Scoreboard System for EKF Tournaments. 
+                    Professional Scoreboard System for Ashihara Tournaments. 
                     Manage brackets, track scores, and handle match timers efficiently.
                 </p>
             </div>
         </div>
 
-        <div class="split-screen right-split">
-            <!-- Background Typography -->
-            <div class="bg-typography">
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ </span>
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
-            </div>
-
-            <!-- Central Action Image -->
-            <div class="hero-image-container">
-                <img src="assets/3d-figure.png" alt="Karate Fighter" class="hero-image">
-            </div>
-        </div>
+        <div class="split-screen right-split"> </div>
+  
     </section>
+
+
 
     <!-- ========================== -->
     <!-- SCOREBOARD APP SHELL       -->
@@ -103,7 +93,9 @@
 
         <div class="main-title" role="heading" aria-level="1">
             <img src="assets/ethiopian-flag.png" alt="Ethiopian flag" class="title-image title-image--flag" onerror="this.style.display='none'">
-            <span class="main-title-text">EKF SCOREBOARD</span>
+            
+            <img src="assets/title.png" alt="ASHIHARA SCOREBOARD" class="main-title-image" onerror="this.style.display='none'">
+            
             <img src="assets/logo.png" alt="EKF logo" class="title-image title-image--logo" onerror="this.style.display='none'">
         </div>
 
@@ -123,7 +115,7 @@
                             <button class="score-btn subtract" data-team="ao" data-points="-1" data-tooltip="Remove 1">-</button>
                         </div>
                         <div class="team-info">
-                            <input type="text" class="team-name-input" id="ao-name-input" value="AO" data-team="ao">
+                            <input type="text" class="team-name-input" id="ao-name-input" value="SHIRO" data-team="ao">
                             <div class="score-display" id="ao-score">0</div>
                         </div>
                         <div class="senshu-container">
@@ -153,33 +145,44 @@
                 </div>
 
                 <div class="bottom-section">
-                    <div class="penalty-grid ao-penalties">
-                        <button class="penalty-btn c1" data-team="ao" data-type="warning">C1</button>
-                        <button class="penalty-btn c2" data-team="ao" data-type="warning">C2</button>
-                        <button class="penalty-btn c3" data-team="ao" data-type="warning">C3</button>
-                        <button class="penalty-btn minus" data-team="ao" data-type="action">-</button>
-                        <button class="penalty-btn hc" data-team="ao" data-type="dq">HC</button>
-                        <button class="penalty-btn h" data-team="ao" data-type="dq">H</button>
-                        <button class="penalty-btn s-btn" data-team="ao" data-type="dq">S</button>
-                        <button class="penalty-btn k-btn" data-team="ao" data-type="dq">K</button>
+                    <div class="penalty-grid ao-penalties" data-team="ao">
+                        <button class="penalty-btn c1" data-team="ao" data-penalty="C1">C1</button>
+                        <button class="penalty-btn c2" data-team="ao" data-penalty="C2">C2</button>
+                        <button class="penalty-btn j1" data-team="ao" data-penalty="J1">J1</button>
+                        <button class="penalty-btn j2" data-team="ao" data-penalty="J2">J2</button>
+                        <button class="penalty-btn hc" data-team="ao" data-penalty="HC">HC</button>
+                        <button class="penalty-btn h" data-team="ao" data-penalty="H">H</button>
+                        <button class="penalty-btn s-btn" data-team="ao" data-penalty="S">S</button>
+                        <button class="penalty-btn k-btn" data-team="ao" data-penalty="K">K</button>
+                    </div>
+
+                    <div class="ko-container">
+                        <button class="ko-btn" data-team="ao">KNOCK OUT</button>
                     </div>
 
                     <div class="time-center">
                         <div class="timer-container">
                             <div class="time-display" id="timer" data-tooltip="Match Time">02:00</div>
                         </div>
+                        <div class="timer-controls">
+                            <button class="penalty-btn timer-adj minus" data-type="action">-</button>
+                            <button class="penalty-btn timer-adj plus" data-type="action">+</button>
+                        </div>
                     </div>
 
-                    <div class="penalty-grid aka-penalties">
-                        <button class="penalty-btn plus" data-team="aka" data-type="action">+</button>
-                        <button class="penalty-btn c1" data-team="aka" data-type="warning">C1</button>
-                        <button class="penalty-btn c2" data-team="aka" data-type="warning">C2</button>
-                        <button class="penalty-btn c3" data-team="aka" data-type="warning">C3</button>
-                        <button class="penalty-btn k-btn" data-team="aka" data-type="dq">K</button>
-                        <button class="penalty-btn s-btn" data-team="aka" data-type="dq">S</button>
-                        <button class="penalty-btn h" data-team="aka" data-type="dq">H</button>
-                        <button class="penalty-btn hc" data-team="aka" data-type="dq">HC</button>                       
-                        
+                    <div class="ko-container">
+                        <button class="ko-btn" data-team="aka">KNOCK OUT</button>
+                    </div>
+
+                    <div class="penalty-grid aka-penalties" data-team="aka">
+                        <button class="penalty-btn c1" data-team="aka" data-penalty="C1">C1</button>
+                        <button class="penalty-btn c2" data-team="aka" data-penalty="C2">C2</button>
+                        <button class="penalty-btn j1" data-team="aka" data-penalty="J1">J1</button>
+                        <button class="penalty-btn j2" data-team="aka" data-penalty="J2">J2</button>
+                        <button class="penalty-btn hc" data-team="aka" data-penalty="HC">HC</button>
+                        <button class="penalty-btn h" data-team="aka" data-penalty="H">H</button>
+                        <button class="penalty-btn s-btn" data-team="aka" data-penalty="S">S</button>
+                        <button class="penalty-btn k-btn" data-team="aka" data-penalty="K">K</button>
                     </div>
                 </div>
             </div>
@@ -192,7 +195,6 @@
             <div class="controls-section">
                 <button id="reset-timer-btn" class="ctrl-btn" data-tooltip="Reset Match">&#128472;</button> 
                 <button id="start-pause-btn" class="ctrl-btn big-play" data-tooltip="Start/Pause">&#9658;</button>
-                <div class="winning-gap-info">Gap: <span id="winning-gap-value">8</span></div>
                 <button id="fullscreen-btn" class="ctrl-btn" data-tooltip="Fullscreen">&#x26F6;</button> 
             </div>
         </div>
@@ -233,13 +235,13 @@
                 </header>
                 <p id="decision-message" style="margin: 20px 0; font-size: 1.1rem; line-height: 1.5;"></p>
                 <div class="winner-actions">
-                    <button id="decision-confirm-btn" class="primary-btn danger-btn" style="border-color: red; color: white; background: #990000;">CONFIRM</button>
+                    <button id="decision-confirm-btn" class="primary-btn danger-btn" style="border-color: red; color: white; background: #990000;">OK</button>
                     <button id="decision-cancel-btn" class="ghost-btn">Cancel</button>
                 </div>
             </div>
         </div>
 
-        <!-- WINNER MODAL (MANUAL DECLARE BUTTONS REMOVED) -->
+        <!-- WINNER MODAL -->
         <div id="winner-modal" class="modal hidden">
             <div class="modal-card winner-card">
                 <header class="modal-header">
@@ -247,7 +249,6 @@
                     <button class="icon-btn" id="winner-modal-close">&times;</button>
                 </header>
                 <p id="winner-message"></p>
-                <!-- Manual Declare Buttons Removed Here -->
                 <div class="winner-controls">
                     <button id="winner-modal-next" class="primary-btn">Load Next Match</button>
                 </div>
@@ -255,16 +256,6 @@
         </div>
     </div>
     
-    <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then((reg) => console.log('Service Worker Registered!', reg.scope))
-                .catch((err) => console.log('Service Worker Registration Failed:', err));
-        });
-    }
-    </script>
-
     <script src="script.js"></script>
 </body>
 </html>
