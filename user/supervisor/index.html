@@ -2,111 +2,430 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor Command | Federation</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Supervisor Control | Federation Management</title>
+    
+    <!-- External Resources -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           CORE STYLING (ALIGNED WITH ADMIN)
+           ========================================= */
+        :root {
+            --primary: #1e293b;
+            --accent: #c5a059;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --sidebar-w: 280px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; }
+        .hidden { display: none !important; }
+
+        /* 1. LOGIN SCREEN */
+        .login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .login-card { background: white; padding: 40px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: center; }
+        .login-card i { font-size: 3.5rem; color: var(--accent); margin-bottom: 20px; }
+        .login-card h2 { margin-bottom: 25px; font-weight: 900; color: var(--primary); }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+        .input-group input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 1.1rem; outline: none; }
+        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-exit-login { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 12px; margin-top: 15px; cursor: pointer; font-weight: 600; }
+
+        /* 2. DASHBOARD LAYOUT */
+        .app-container { display: flex; height: 100vh; width: 100vw; position: relative; }
+        
+        .sidebar { 
+            width: var(--sidebar-w); background: var(--primary); color: white; 
+            padding: 40px 20px; position: fixed; height: 100vh; z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .main-content { 
+            margin-left: var(--sidebar-w); flex: 1; 
+            display: flex; flex-direction: column; 
+            height: 100vh; overflow: hidden; transition: margin 0.3s ease;
+        }
+
+        .sidebar h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .nav-link { width: 100%; padding: 14px 18px; background: transparent; color: #94a3b8; border: none; border-radius: 12px; text-align: left; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; font-weight: 700; transition: 0.2s; }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-link.danger { color: #f87171; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 30px; padding-top: 20px; }
+
+        /* 3. HEADER & TIMER (ENHANCED) */
+        .top-bar { 
+            height: 100px; background: white; padding: 0 40px; 
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .timer-cluster { display: flex; align-items: center; gap: 15px; background: #000; padding: 10px 20px; border-radius: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .timer-display { font-family: 'Courier New', monospace; font-size: 3rem; font-weight: 900; color: var(--danger); min-width: 130px; text-align: center; }
+        .timer-btn { background: #222; border: none; color: white; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+        .timer-btn:hover { background: #333; }
+        .timer-btn-play { background: var(--accent); color: #000; width: 50px; height: 50px; border-radius: 50%; font-size: 1.4rem; border: none; cursor: pointer; }
+
+        /* 4. SCORING MATRIX */
+        .scroll-area { flex: 1; padding: 25px; overflow-y: auto; background: var(--bg); }
+        .matrix-card { background: white; border-radius: 20px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { background: #f8fafc; padding: 18px; text-align: center; font-size: 0.75rem; font-weight: 800; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        td { padding: 18px; text-align: center; border-bottom: 1px solid #f1f5f9; font-size: 1.05rem; }
+        .active-row { background: rgba(197, 160, 89, 0.08); border-left: 5px solid var(--accent); }
+        .input-art { background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; width: 140px; font-weight: 600; }
+
+        /* 5. ACTION CONTROLS */
+        .action-bar { 
+            height: 100px; background: white; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; flex-shrink: 0;
+        }
+        .btn-circle { width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 1.3rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-circle:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+        .btn-primary { background: var(--primary); color: white; padding: 15px 30px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-primary.disabled { opacity: 0.2; cursor: not-allowed; }
+
+        /* 6. RESPONSIVE DESIGN */
+        .hamburger { display: none; background: none; border: none; font-size: 1.6rem; color: var(--primary); cursor: pointer; margin-right: 20px; }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900; backdrop-filter: blur(2px); }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); width: 270px; }
+            .sidebar.open { transform: translateX(0); box-shadow: 10px 0 50px rgba(0,0,0,0.3); }
+            .sidebar-overlay.open { display: block; }
+            .main-content { margin-left: 0; }
+            .top-bar { padding: 0 15px; }
+            .timer-cluster { padding: 5px 10px; gap: 8px; border-radius: 12px; }
+            .timer-display { font-size: 1.8rem; min-width: 80px; }
+            .timer-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+            .timer-btn-play { width: 40px; height: 40px; font-size: 1.1rem; }
+            .hamburger { display: block; }
+            .action-bar { padding: 0 15px; }
+            .btn-circle { width: 45px; height: 45px; font-size: 1.1rem; }
+            .btn-primary { padding: 12px 18px; font-size: 0.8rem; }
+        }
+
+        /* MODAL */
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+        .modal-content { background: white; border-radius: 24px; width: 100%; max-width: 900px; max-height: 85vh; overflow-y: auto; padding: 35px; }
+        
+        .log-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .log-table th { background: #f8fafc; padding: 12px; font-size: 0.7rem; border: 1px solid var(--border); }
+        .log-table td { padding: 12px; border: 1px solid var(--border); font-size: 0.9rem; }
+    </style>
 </head>
 <body>
-    <!-- Login Screen -->
-    <div id="sup-login" class="full-screen-center">
+
+    <div id="sb-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="sup-login" class="login-screen">
         <div class="login-card">
-            <i class="fas fa-user-shield brand-icon"></i>
+            <i class="fas fa-user-shield"></i>
             <h2>Supervisor Portal</h2>
-            <p>Enter the Tournament ID and Access Code</p>
-            <div class="input-field">
+            <div class="input-group">
                 <label>Tournament ID</label>
-                <input type="text" id="login-tid" value="T" placeholder="Txxxx">
+                <input type="text" id="login-tid" value="T">
             </div>
-            <div class="input-field">
-                <label>Access Code</label>
-                <input type="password" id="login-code" placeholder="4-Digit Code">
+            <div class="input-group">
+                <label>Supervisor PIN</label>
+                <input type="password" id="login-code" placeholder="6-digit Access Code">
             </div>
-            <!-- Inside the login-card div -->
-<button onclick="handleLogin()" class="btn-primary full-width">Connect to Tournament</button>
-<button onclick="window.location.href='../../art_page.html'" class="btn-ghost">Exit</button>
+            <button onclick="handleLogin()" class="btn-login">Open Control Center</button>
+            <button onclick="window.location.href='../../art_page.html'" class="btn-exit-login">Return to Portal</button>
         </div>
     </div>
 
-    <!-- Live Dashboard -->
-    <div id="sup-dashboard" class="hidden">
-        <header class="sup-header">
-            <div class="tournament-info">
-                <h1 id="active-t-name">Tournament Title</h1>
-                <div class="status-indicator">
-                    <span id="t-status" class="pill">STATUS</span>
-                    <span id="t-id-display" class="pill ghost">ID</span>
+    <!-- 2. DASHBOARD -->
+    <div id="sup-dashboard" class="app-container hidden">
+        <aside id="main-sidebar" class="sidebar">
+            <h2><i class="fas fa-shield-alt"></i> CONTROL</h2>
+            <nav>
+                <button class="nav-link" onclick="refreshDashboard()"><i class="fas fa-sync-alt"></i> Refresh Dashboard</button>
+                <button class="nav-link" onclick="openLogModal()"><i class="fas fa-history"></i> View Session Logs</button>
+                <button class="nav-link danger" onclick="leaveTournament()"><i class="fas fa-power-off"></i> Exit Live Room</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div style="display:flex; align-items:center;">
+                    <button class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <div>
+                        <h1 id="active-t-name" style="font-size:1.1rem; font-weight:900;">...</h1>
+                        <p id="t-id-display" style="font-size:0.7rem; color:var(--muted); font-weight:800;"></p>
+                    </div>
+                </div>
+
+                <div class="timer-cluster">
+                    <button onclick="adjustTimer(1)" class="timer-btn"><i class="fas fa-plus"></i></button>
+                    <button id="btn-timer-head" onclick="supervisorAction('toggle-timer')" class="timer-btn-play"><i class="fas fa-play"></i></button>
+                    <button onclick="adjustTimer(-1)" class="timer-btn"><i class="fas fa-minus"></i></button>
+                    <div class="timer-display" id="main-timer">00:00</div>
+                </div>
+            </header>
+
+            <div class="scroll-area">
+                <div class="matrix-card">
+                    <div class="table-responsive">
+                        <table id="score-matrix">
+                            <thead><tr id="matrix-head"></tr></thead>
+                            <tbody id="matrix-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-            <div class="timer-display" id="main-timer">00:00</div>
-            <div class="header-actions">
-                <button onclick="openLogModal()" class="btn-secondary"><i class="fas fa-list"></i> Logs</button>
-                <!-- New Exit Button -->
-                <button onclick="leaveTournament()" class="btn-exit-live"><i class="fas fa-door-open"></i> Leave</button>
-            </div>
-        </header>
 
-        <main class="matrix-area">
-            <div class="matrix-container">
-                <table id="score-matrix">
-                    <thead>
-                        <tr id="matrix-head">
-                            <!-- Dynamic Content -->
-                        </tr>
-                    </thead>
-                    <tbody id="matrix-body">
-                        <!-- Dynamic Content -->
-                    </tbody>
-                </table>
-            </div>
+            <footer class="action-bar">
+                <div style="display:flex; gap:15px;">
+                    <button id="btn-start" onclick="supervisorAction('toggle-live')" class="btn-circle" title="Tournament Live/Stop"><i class="fas fa-flag-checkered"></i></button>
+                    <button id="btn-next" onclick="supervisorAction('next')" class="btn-circle" title="Next Performer"><i class="fas fa-step-forward"></i></button>
+                    <button id="btn-lock" onclick="supervisorAction('toggle-lock')" class="btn-circle" title="Unlock/Lock Scores"><i class="fas fa-unlock"></i></button>
+                </div>
+                <div style="display:flex; gap:15px;">
+                    <button id="btn-publish-score" onclick="supervisorAction('publish-score')" class="btn-primary disabled">Publish Score</button>
+                    <button id="btn-publish-winner" onclick="supervisorAction('publish-winner')" class="btn-primary hidden" style="background:var(--success)">Finalize tournament</button>
+                </div>
+            </footer>
         </main>
-
-        <footer class="sup-controls">
-            <div class="control-group">
-                <button id="btn-start" onclick="supervisorAction('start')" class="ctrl-btn" title="Start Tournament"><i class="fas fa-flag-checkered"></i>                
-                <button id="btn-timer" onclick="supervisorAction('toggle-timer')" class="ctrl-btn" title="Play/Pause Timer"><i class="fas fa-pause"></i></button>
-                <button id="btn-next" onclick="supervisorAction('next')" class="ctrl-btn" title="Stop & Advance"><i class="fas fa-step-forward"></i></button>
-                <div class="divider"></div>
-                <button id="btn-lock" onclick="supervisorAction('toggle-lock')" class="ctrl-btn" title="Lock/Unlock Submissions"><i class="fas fa-unlock"></i></button>
-            </div>
-            
-            <div class="action-group">
-                <button id="btn-publish-score" onclick="supervisorAction('publish-score')" class="btn-action disabled">Publish Score</button>
-                <button id="btn-publish-winner" onclick="supervisorAction('publish-winner')" class="btn-action winner hidden">Publish Winner</button>
-            </div>
-        </footer>
     </div>
 
-    <!-- Log Modal -->
+    <!-- LOG MODAL -->
     <div id="log-modal" class="modal hidden">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h2>Tournament Logs</h2>
-                <button onclick="closeModal('log-modal')" class="close-btn">&times;</button>
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 style="font-weight:900;">Official Session Log</h2>
+                <button onclick="closeModal('log-modal')" style="background:none; border:none; font-size:1.8rem; cursor:pointer;">&times;</button>
             </div>
-            <div class="modal-body" id="log-table-container">
-                <!-- Log data goes here -->
-            </div>
-            <div class="modal-footer">
-                <button onclick="exportToPDF()" class="btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</button>
+            <div id="log-table-container"></div>
+            <div style="display:flex; gap:15px; margin-top:25px;">
+                <button onclick="exportToPDF()" class="btn-primary" style="flex:1;"><i class="fas fa-file-pdf"></i> Export Official PDF</button>
+                <button onclick="closeModal('log-modal')" class="btn-ghost" style="margin:0; flex:0.4;">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Celebration Popup -->
-    <div id="celebration" class="celebration-overlay hidden">
-        <div class="celebration-card">
-            <i class="fas fa-trophy"></i>
-            <h1>Tournament Complete!</h1>
-            <p id="winner-text">The official results have been published.</p>
-            <button onclick="location.reload()" class="btn-primary">Finish</button>
+    <!-- CHAMPION OVERLAY -->
+    <div id="celebration" class="hidden" style="position:fixed; inset:0; background:rgba(15, 23, 42, 0.98); z-index:9999; display:flex; align-items:center; justify-content:center; text-align:center;">
+        <div style="color:white; padding:40px;">
+            <i class="fas fa-trophy" style="font-size:6rem; color:var(--accent); margin-bottom:30px;"></i>
+            <h1 style="font-size:3.5rem; font-weight:900; letter-spacing:2px;">TOURNAMENT CONCLUDED</h1>
+            <p style="font-size:1.4rem; color:var(--muted); margin:20px 0;">Official results have been broadcast to the Scoreboard.</p>
+            <button onclick="location.reload()" class="btn-primary">Return to Dashboard</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
+        const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let state = { activeT: null, competitors: [], judges: [], scores: [] };
+
+        // --- 1. PERSISTENCE & BOOT ---
+        window.onload = () => {
+            const savedTid = sessionStorage.getItem('sup_tid');
+            const savedCode = sessionStorage.getItem('sup_code');
+            if(savedTid && savedCode) {
+                document.getElementById('login-tid').value = savedTid;
+                document.getElementById('login-code').value = savedCode;
+                handleLogin();
+            }
+        };
+
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('open');
+            document.getElementById('sb-overlay').classList.toggle('open');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- 2. AUTHENTICATION ---
+        async function handleLogin() {
+            const tid = document.getElementById('login-tid').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+            const { data: u, error } = await _client.from('judges').select('*, tournaments(*)').eq('judge_code', code).single();
+
+            if (u && u.tournaments.short_id === tid && u.role === 'supervisor') {
+                state.activeT = u.tournaments;
+                sessionStorage.setItem('sup_tid', tid);
+                sessionStorage.setItem('sup_code', code);
+                document.getElementById('sup-login').classList.add('hidden');
+                document.getElementById('sup-dashboard').classList.remove('hidden');
+                initRealtime();
+                refreshDashboard();
+            } else { alert("Access Denied: Invalid Tournament ID or PIN."); }
+        }
+
+        // --- 3. DATA REFRESH ---
+        async function refreshDashboard() {
+            if(!state.activeT) return;
+            const tid = state.activeT.id;
+            const { data: comps } = await _client.from('competitors').select('*').eq('tournament_id', tid).order('order_index');
+            const { data: judges } = await _client.from('judges').select('*').eq('tournament_id', tid).eq('role', 'judge');
+            const { data: scores } = await _client.from('scores').select('*').eq('tournament_id', tid);
+            state.competitors = comps; state.judges = judges; state.scores = scores;
+            renderMatrix(); updateUI();
+            if(window.innerWidth < 768) {
+                document.getElementById('main-sidebar').classList.remove('open');
+                document.getElementById('sb-overlay').classList.remove('open');
+            }
+        }
+
+        function initRealtime() {
+            _client.channel('sup-room').on('postgres_changes', { event: '*', schema: 'public' }, () => refreshDashboard()).subscribe();
+        }
+
+        // --- 4. UI RENDERING ---
+        function renderMatrix() {
+            const head = document.getElementById('matrix-head');
+            const body = document.getElementById('matrix-body');
+            let h = `<th>Competitor</th><th>Kata / Performance</th>`;
+            state.judges.forEach((j, i) => h += `<th>Judge ${i+1}</th>`);
+            h += `<th>Total</th>`;
+            head.innerHTML = h;
+
+            body.innerHTML = state.competitors.map(c => {
+                const isCurr = c.id === state.activeT.current_competitor_id;
+                let total = 0;
+                let judgeCells = state.judges.map(j => {
+                    const s = state.scores.find(sc => sc.competitor_id === c.id && sc.judge_id === j.id);
+                    if(s) total += parseFloat(s.score_value);
+                    return `<td>${s ? s.score_value.toFixed(1) : '<span style="color:#cbd5e0">-</span>'}</td>`;
+                }).join('');
+
+                return `
+                    <tr class="${isCurr ? 'active-row' : ''}">
+                        <td style="text-align:left; font-weight:800;">${c.name}</td>
+                        <td><input class="input-art" onchange="updateArtType('${c.id}', this.value)" value="${c.art_type || ''}" placeholder="Enter Art..."></td>
+                        ${judgeCells}
+                        <td style="color:var(--accent); font-weight:900;">${total.toFixed(1)}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function updateUI() {
+            const t = state.activeT;
+            document.getElementById('active-t-name').innerText = t.name;
+            document.getElementById('t-id-display').innerText = "TOURNAMENT ID: " + t.short_id;
+            
+            // Toggle Start/Stop Icon based on tournament status
+            const startBtn = document.getElementById('btn-start');
+            if(t.status === 'live') {
+                startBtn.innerHTML = '<i class="fas fa-stop-circle" style="color:var(--danger)"></i>';
+                startBtn.title = "Stop Tournament";
+            } else {
+                startBtn.innerHTML = '<i class="fas fa-flag-checkered"></i>';
+                startBtn.title = "Start Tournament";
+            }
+
+            document.getElementById('btn-timer-head').innerHTML = t.timer_status === 'running' ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+            document.getElementById('btn-lock').innerHTML = t.is_locked ? '<i class="fas fa-lock" style="color:var(--danger)"></i>' : '<i class="fas fa-unlock"></i>';
+
+            const currScores = state.scores.filter(s => s.competitor_id === t.current_competitor_id);
+            document.getElementById('btn-publish-score').classList.toggle('disabled', currScores.length < state.judges.length);
+            if (t.status === 'ended') document.getElementById('btn-publish-winner').classList.remove('hidden');
+        }
+
+        // --- 5. ACTIONS ---
+        async function supervisorAction(type) {
+            const t = state.activeT;
+            if (type === 'toggle-live') {
+                if(t.status === 'waiting') {
+                    const { data: first } = await _client.from('competitors').select('id').eq('tournament_id', t.id).order('order_index').limit(1).single();
+                    await _client.from('tournaments').update({ status: 'live', current_competitor_id: first.id, remaining_time_seconds: t.performance_time }).eq('id', t.id);
+                } else if(t.status === 'live') {
+                    if(confirm("Stop this tournament and set to Waiting?")) {
+                        await _client.from('tournaments').update({ status: 'waiting', timer_status: 'idle' }).eq('id', t.id);
+                    }
+                }
+            } else if (type === 'toggle-timer') {
+                const isR = t.timer_status === 'running';
+                const up = { timer_status: isR ? 'paused' : 'running', timer_started_at: isR ? null : new Date().toISOString() };
+                if (isR) {
+                    const elapsed = Math.floor((new Date() - new Date(t.timer_started_at)) / 1000);
+                    up.remaining_time_seconds = Math.max(0, t.remaining_time_seconds - elapsed);
+                }
+                await _client.from('tournaments').update(up).eq('id', t.id);
+            } else if (type === 'next' || type === 'publish-score') {
+                const idx = state.competitors.findIndex(c => c.id === t.current_competitor_id);
+                if (state.competitors[idx + 1]) {
+                    if (type === 'publish-score') await logCurrentScores();
+                    await _client.from('tournaments').update({ current_competitor_id: state.competitors[idx+1].id, is_locked: false, timer_status: 'idle', remaining_time_seconds: t.performance_time }).eq('id', t.id);
+                } else { 
+                    if (type === 'publish-score') await logCurrentScores();
+                    await _client.from('tournaments').update({ status: 'ended', timer_status: 'idle' }).eq('id', t.id); 
+                }
+            } else if (type === 'toggle-lock') { await _client.from('tournaments').update({ is_locked: !t.is_locked }).eq('id', t.id); }
+            else if (type === 'publish-winner') { document.getElementById('celebration').classList.remove('hidden'); }
+        }
+
+        async function adjustTimer(amt) {
+            const newTime = Math.max(0, state.activeT.remaining_time_seconds + amt);
+            await _client.from('tournaments').update({ remaining_time_seconds: newTime }).eq('id', state.activeT.id);
+        }
+
+        async function updateArtType(id, val) { await _client.from('competitors').update({ art_type: val }).eq('id', id); }
+
+        // --- 6. LOGGING & PDF ---
+        async function logCurrentScores() {
+            const t = state.activeT;
+            const currComp = state.competitors.find(c => c.id === t.current_competitor_id);
+            const currScores = state.scores.filter(s => s.competitor_id === t.current_competitor_id);
+            const logEntries = currScores.map(s => ({
+                tournament_id: t.id, competitor_name: currComp.name, art_type: currComp.art_type || 'N/A',
+                judge_code: state.judges.find(j => j.id === s.judge_id).judge_code, score_value: s.score_value
+            }));
+            await _client.from('tournament_logs').insert(logEntries);
+        }
+
+        async function openLogModal() {
+            const { data: logs, error } = await _client.from('tournament_logs').select('*').eq('tournament_id', state.activeT.id);
+            if(error) return alert("Log Fetch Error");
+            let html = `<table id="log-table" class="log-table"><thead><tr><th>Performer</th><th>Kata</th><th>Official PIN</th><th>Value</th></tr></thead><tbody>`;
+            logs.forEach(l => { html += `<tr><td>${l.competitor_name}</td><td>${l.art_type}</td><td>${l.judge_code}</td><td>${parseFloat(l.score_value).toFixed(1)}</td></tr>`; });
+            document.getElementById('log-table-container').innerHTML = html + `</tbody></table>`;
+            document.getElementById('log-modal').classList.remove('hidden');
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            doc.setFontSize(18);
+            doc.text(`Official Session Log: ${state.activeT.name}`, 14, 20);
+            doc.setFontSize(10);
+            doc.text(`ID: ${state.activeT.short_id} | Date: ${new Date().toLocaleString()}`, 14, 28);
+            doc.autoTable({ html: '#log-table', startY: 35, theme: 'striped', headStyles: { fillColor: [30, 41, 59] } });
+            doc.save(`EKF_Log_${state.activeT.short_id}.pdf`);
+        }
+
+        function leaveTournament() { if(confirm("Terminate session and logout?")) { sessionStorage.clear(); location.reload(); } }
+
+        // --- 7. TIMER ENGINE ---
+        setInterval(() => {
+            if (state.activeT) {
+                const t = state.activeT;
+                let displayTime = t.remaining_time_seconds;
+                if (t.timer_status === 'running' && t.timer_started_at) {
+                    const elapsed = Math.floor((new Date() - new Date(t.timer_started_at)) / 1000);
+                    displayTime = Math.max(0, t.remaining_time_seconds - elapsed);
+                }
+                const mins = Math.floor(displayTime / 60).toString().padStart(2, '0');
+                const secs = (displayTime % 60).toString().padStart(2, '0');
+                const timerEl = document.getElementById('main-timer');
+                if(timerEl) timerEl.innerText = `${mins}:${secs}`;
+            }
+        }, 1000);
+    </script>
 </body>
 </html>

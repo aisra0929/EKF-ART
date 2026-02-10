@@ -3,10 +3,18 @@ document.addEventListener('DOMContentLoaded', () => {
         '00:30', '01:00', '01:30', '02:00', '02:30',
         '03:00', '03:30', '04:00', '04:30', '05:00',
     ];
+    
     const WEIGHT_CLASSES = {
-        Male: ['-60 kg', '-67 kg', '-75 kg', '-84 kg', '+84 kg'],
-        Female: ['-50 kg', '-55 kg', '-61 kg', '-68 kg', '+68 kg'],
+        Senior: {
+            Male: ['-60 kg', '-67 kg', '-75 kg', '-84 kg', '+84 kg'],
+            Female: ['-50 kg', '-55 kg', '-61 kg', '-68 kg', '+68 kg'],
+        },
+        Cadet: {
+            Male: ['52kg', '57kg', '63kg', '70kg', 'Above 70kg'],
+            Female: ['47kg', '54kg', '61kg', 'Above 61kg'],
+        }
     };
+
     const STORAGE_KEY = 'ekfScoreboardLogs';
     const GAP_LIMIT = 8;
     const PDF_LINE_LIMIT = 90;
@@ -24,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerCountSelect: document.getElementById('player-count-select'),
         playerGrid: document.getElementById('player-name-grid'),
         matchDurationSelect: document.getElementById('match-duration-select'),
+        categorySelect: document.getElementById('category-select'), // Added
         genderSelect: document.getElementById('gender-select'),
         weightSelect: document.getElementById('weight-class-select'),
         startTournamentBtn: document.getElementById('start-tournament-btn'),
@@ -95,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             players: [],
             rounds: [],
             active: { roundIndex: 0, matchIndex: 0 },
-            division: { gender: 'Male', weightClass: WEIGHT_CLASSES.Male[0] },
+            division: { category: 'Senior', gender: 'Male', weightClass: '' },
         },
         playerFlags: {},
         controlsLocked: true,
@@ -180,8 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
         els.matchDurationSelect.appendChild(fragment);
     };
 
-    const populateWeightClasses = (gender) => {
-        const classes = WEIGHT_CLASSES[gender] || [];
+    const populateWeightClasses = (category, gender) => {
+        const classes = WEIGHT_CLASSES[category][gender] || [];
         els.weightSelect.innerHTML = '';
         classes.forEach((label, index) => {
             const opt = document.createElement('option');
@@ -194,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const syncDivisionSelection = () => {
         state.tournament.division = {
+            category: els.categorySelect.value,
             gender: els.genderSelect.value,
             weightClass: els.weightSelect.value,
         };
@@ -272,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             els.bracketGrid.appendChild(column);
         });
         const division = state.tournament.division;
-        const divisionLabel = division ? ` • ${division.gender} ${division.weightClass}` : '';
+        const divisionLabel = division ? ` • ${division.category} ${division.gender} ${division.weightClass}` : '';
         els.bracketStatus.textContent = `Round ${state.tournament.active.roundIndex + 1} • Match ${state.tournament.active.matchIndex + 1}${divisionLabel}`;
     };
 
@@ -523,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `Loser: ${loserName}`,
             `Reason: ${reason}`,
             `Bracket Position: Round ${state.tournament.active.roundIndex + 1} Match ${state.tournament.active.matchIndex + 1}`,
-            `Division: ${state.tournament.division.gender} ${state.tournament.division.weightClass}`,
+            `Division: ${state.tournament.division.category} ${state.tournament.division.gender} ${state.tournament.division.weightClass}`,
             `Referee: ${els.refereeInput.value || 'N/A'}`,
         ];
         const body = header.concat(['--- Events ---', ...state.logBuffer, '--- Scoreboard ---', `AO: ${state.scores.ao}`, `AKA: ${state.scores.aka}`]);
@@ -659,9 +669,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             els.winnerMessage.textContent = `${winnerName} defeated ${loserName}. Reason: ${reason}.`;
         }
-
-        // --- FIXED POPUP BUTTONS NOT APPEARING IN FUTURE ROUNDS ---
-        // (Removed the line that was hiding 'winnerActions' which accidentally targeted the wrong buttons)
         
         els.winnerModal.classList.remove('hidden');
         saveMatchLog(team, reason);
@@ -797,11 +804,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Wiring
     populateMatchDurations();
-    populateWeightClasses(els.genderSelect.value);
+    // Initial population using defaults
+    populateWeightClasses(els.categorySelect.value, els.genderSelect.value);
     renderPlayerInputs();
     syncDivisionSelection();
+
     els.playerCountSelect.addEventListener('change', renderPlayerInputs);
-    els.genderSelect.addEventListener('change', () => { populateWeightClasses(els.genderSelect.value); syncDivisionSelection(); });
+    
+    // Updated listeners to include Category
+    els.categorySelect.addEventListener('change', () => { 
+        populateWeightClasses(els.categorySelect.value, els.genderSelect.value); 
+        syncDivisionSelection(); 
+    });
+    els.genderSelect.addEventListener('change', () => { 
+        populateWeightClasses(els.categorySelect.value, els.genderSelect.value); 
+        syncDivisionSelection(); 
+    });
+    
     els.weightSelect.addEventListener('change', syncDivisionSelection);
     els.playerGrid.addEventListener('change', (event) => {
         const input = event.target;
@@ -890,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.historyClose.addEventListener('click', closeHistoryModal);
     if (els.eraseHistoryBtn) els.eraseHistoryBtn.addEventListener('click', eraseHistory);
     els.winnerModalClose.addEventListener('click', closeWinnerModal);
-    // REMOVED event listeners for manual declare buttons
+    
     els.winnerNextBtn.addEventListener('click', () => { closeWinnerModal(); loadNextMatch(); });
     if (els.fullscreenBtn) {
         els.fullscreenBtn.addEventListener('click', toggleFullscreen);
