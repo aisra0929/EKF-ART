@@ -395,8 +395,8 @@
                 if (state.editingId && activeIds.length > 0) await _client.from('competitors').delete().eq('tournament_id', tId).not('id', 'in', `(${activeIds.join(',')})`);
                 
                 await _client.from('judges').delete().eq('tournament_id', tId);
-                await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 900000).toString(), role: 'supervisor' });
-                for (let i = 0; i < jCount; i++) await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 900000).toString(), role: 'judge' });
+                await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 9000).toString(), role: 'supervisor' });
+                for (let i = 0; i < jCount; i++) await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 9000).toString(), role: 'judge' });
 
                 state.tempPhotos = {}; showNotification("Tournament Created!"); closeModal(); loadDashboard();
             } catch (err) { console.error(err); showNotification("Save Error."); }
