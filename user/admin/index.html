@@ -3,142 +3,476 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | Federation Management</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Federation Admin | Management Suite</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* =========================================
+           PROFESSIONAL ADMIN UI - STYLING
+           ========================================= */
+        :root {
+            --primary: #1e293b;
+            --accent: #c5a059;
+            --bg: #f1f5f9;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        .hidden { display: none !important; }
+
+        /* 1. LOGIN SCREEN */
+        .login-screen {
+            position: fixed; inset: 0; background: var(--primary);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .login-card {
+            background: white; padding: 40px; border-radius: 24px;
+            width: 100%; max-width: 400px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .login-card i { font-size: 3.5rem; color: var(--accent); margin-bottom: 20px; }
+        .login-card h2 { margin-bottom: 30px; font-weight: 900; color: var(--primary); }
+        
+        .input-group { text-align: left; margin-bottom: 20px; }
+        .input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+        .input-group input, .input-group select { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none; }
+        .input-group input:focus { border-color: var(--accent); }
+
+        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-exit-login { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 14px; margin-top: 15px; cursor: pointer; font-weight: 600; }
+
+        /* 2. DASHBOARD LAYOUT */
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: var(--primary); color: white; padding: 40px 20px; position: fixed; height: 100vh; box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
+        .main-content { margin-left: 280px; flex: 1; padding: 50px; }
+
+        .sidebar h2 { font-size: 1.4rem; color: var(--accent); margin-bottom: 50px; font-weight: 900; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .nav-link { width: 100%; padding: 14px 18px; background: transparent; color: #94a3b8; border: none; border-radius: 12px; text-align: left; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; font-weight: 700; transition: 0.2s; }
+        .nav-link.active { background: var(--accent); color: #000; }
+        .nav-link:hover:not(.active) { background: rgba(255,255,255,0.05); color: white; }
+
+        /* CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+        .t-card { background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s; }
+        .t-card:hover { transform: translateY(-5px); }
+        .t-card h3 { font-size: 1.25rem; margin-bottom: 15px; font-weight: 800; }
+        .card-meta { display: flex; gap: 15px; margin-bottom: 25px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+
+        .btn-group { display: flex; gap: 10px; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; cursor: pointer; font-weight: 700; font-size: 0.8rem; transition: 0.2s; }
+        .btn-action.primary { background: var(--primary); color: white; border: none; }
+        .btn-action.danger { color: var(--danger); border-color: #fee2e2; }
+        .btn-action:hover { opacity: 0.8; }
+
+        /* MODAL */
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: white; border-radius: 30px; width: 100%; max-width: 950px; max-height: 90vh; overflow-y: auto; padding: 45px; position: relative; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+
+        /* COMPETITOR LIST */
+        .comp-header { display: grid; grid-template-columns: 50px 1.5fr 1fr 130px; gap: 15px; font-weight: 900; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; padding: 15px; border-bottom: 2px solid var(--border); }
+        .comp-row { display: grid; grid-template-columns: 50px 1.5fr 1fr 130px; gap: 15px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
+        
+        .photo-uploader { position: relative; width: 100%; height: 45px; background: #f1f5f9; border-radius: 10px; border: 1px dashed #cbd5e0; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+        .photo-uploader img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-uploader span { font-size: 0.7rem; font-weight: bold; color: var(--muted); }
+        .photo-uploader input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
+        .btn-save-launch { width: 100%; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: 900; font-size: 1.1rem; cursor: pointer; margin-top: 35px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+
+        /* ACCESS CODE POPUP STYLES */
+        .code-list { display: grid; gap: 15px; margin-top: 20px; }
+        .code-item { 
+            background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; 
+            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .code-info b { color: var(--accent); text-transform: uppercase; font-size: 0.75rem; display: block; }
+        .code-info span { font-family: monospace; font-size: 1.2rem; font-weight: bold; }
+        .btn-copy { 
+            background: var(--primary); color: white; border: none; padding: 8px 15px; 
+            border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <i class="fas fa-shield-halved"></i>
-                <span>EKF ADMIN</span>
+
+    <!-- 1. ADMIN LOGIN -->
+    <div id="admin-login" class="login-screen">
+        <div class="login-card">
+            <i class="fas fa-user-shield"></i>
+            <h2>EKF Management</h2>
+            <div class="input-group">
+                <label>Admin Email</label>
+                <input type="email" id="adm-email" placeholder="admin@federation.com">
             </div>
-            <nav class="sidebar-nav">
-                <button class="nav-link active" onclick="location.reload()">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </button>
-                <button class="nav-link" onclick="openCreateModal()">
-                    <i class="fas fa-plus-circle"></i> New Tournament
-                </button>
-                <div class="nav-spacer"></div>
-                <button class="nav-link logout" onclick="window.location.href='../../art_page.html'">
-                    <i class="fas fa-sign-out-alt"></i> Exit Portal
-                </button>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="adm-pass" placeholder="••••••••">
+            </div>
+            <button onclick="handleAdminLogin()" class="btn-login">Access Dashboard</button>
+            <button onclick="window.location.href='../../art_page.html'" class="btn-exit-login">Return to Portal</button>
+        </div>
+    </div>
+
+    <!-- 2. ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="app-container hidden">
+        <aside class="sidebar">
+            <h2><i class="fas fa-shield-alt"></i> EKF ADMIN</h2>
+            <nav>
+                <button class="nav-link active" onclick="location.reload()"><i class="fas fa-chart-line"></i> Dashboard</button>
+                <button class="nav-link" onclick="openCreateModal()"><i class="fas fa-plus-circle"></i> New Tournament</button>
+                <button class="nav-link" style="margin-top:60px; color:#f87171" onclick="logout()"><i class="fas fa-power-off"></i> Sign Out</button>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="main-content">
-            <header class="top-bar">
-                <div class="header-info">
-                    <h1>Tournament Overview</h1>
-                    <p>Manage and monitor active federation events.</p>
-                </div>
-                <div class="stats-mini">
-                    <span class="stat-item">Total Events: <strong id="t-count">0</strong></span>
-                </div>
+            <header style="margin-bottom: 50px;">
+                <h1 style="font-size: 2.2rem; font-weight: 900;">Tournaments</h1>
+                <p style="color: var(--muted); font-weight: 600;">System Management & Real-time Control</p>
             </header>
-
-            <section id="tournament-grid" class="tournament-grid">
-                <!-- Cards loaded dynamically -->
-            </section>
+            <div id="tournament-grid" class="grid">
+                <!-- Tournaments will load here -->
+            </div>
         </main>
     </div>
 
-    <!-- Create/Edit Tournament Modal -->
+    <!-- 3. CONFIG MODAL -->
     <div id="manage-modal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modal-title">Tournament Configuration</h2>
-                <button class="close-modal" onclick="closeModal('manage-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-section">
-                    <label>General Information</label>
-                    <input type="text" id="t-name" class="full-input" placeholder="Tournament Name (e.g. National Kata Cup)">
-                    
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Gender</label>
-                            <select id="t-gender">
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>Kata Type</label>
-                            <select id="t-kata-type">
-                                <option value="Single">Single</option>
-                                <option value="Group">Group</option>
-                            </select>
-                        </div>
+            <h2 id="modal-title" style="margin-bottom: 35px; font-weight: 900; font-size: 1.8rem;">Tournament Settings</h2>
+            
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Tournament Name</label>
+                    <input type="text" id="t-name" placeholder="Enter tournament name">
+                </div>
+                <div class="input-group">
+                    <label>Gender Category</label>
+                    <select id="t-gender">
+                        <option>Male</option><option>Female</option><option>Mixed</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Performance Style</label>
+                    <select id="t-kata-type">
+                        <option value="Single">Individual (Single)</option>
+                        <option value="Group">Team (Group)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Officials (Judges)</label>
+                    <select id="t-jcount">
+                        <option value="3">3 Judges</option><option value="5" selected>5 Judges</option><option value="7">7 Judges</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Allowed Time (M:S)</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="number" id="t-min" value="3">
+                        <input type="number" id="t-sec" value="0">
                     </div>
                 </div>
+                <div class="input-group">
+                    <label>Bracket Size</label>
+                    <select id="t-comp-size" onchange="generateCompetitorRows()">
+                        <option value="2" selected>2 Players</option><option value="4">4 Players</option><option value="8">8 Players</option><option value="16">16 Players</option><option value="32">32 Players</option><option value="64">64 Players</option>
+                    </select>
+                </div>
+            </div>
 
-                <div class="form-section">
-                    <label>Timing & Officials</label>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Performance Time</label>
-                            <div class="time-inputs">
-                                <input type="number" id="t-min" value="3" min="0">
-                                <span>:</span>
-                                <input type="number" id="t-sec" value="0" min="0" max="59">
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>Number of Judges</label>
-                            <select id="t-jcount">
-                                <option value="3">3 Judges</option>
-                                <option value="5" selected>5 Judges</option>
-                                <option value="7">7 Judges</option>
-                            </select>
-                        </div>
-                    </div>
+            <div>
+                <div class="comp-header">
+                    <span>#</span><span>Competitor Full Name</span><span>Art/Kata Type</span><span>Photo</span>
                 </div>
+                <div id="comp-rows-container">
+                    <!-- Rows dynamically generated -->
+                </div>
+            </div>
 
-                <div class="form-section">
-                    <label>Competitors Selection</label>
-                    <div class="input-group">
-                        <label>Size of Bracket</label>
-                        <select id="t-comp-size" onchange="generateCompetitorFields()">
-                            <option value="2">2 Competitors</option>
-                            <option value="4">4 Competitors</option>
-                            <option value="8" selected>8 Competitors</option>
-                            <option value="16">16 Competitors</option>
-                            <option value="32">32 Competitors</option>
-                            <option value="64">64 Competitors</option>
-                        </select>
-                    </div>
-                    <div id="dynamic-competitors" class="competitor-scroll-list">
-                        <!-- Dynamic inputs appear here -->
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="save-btn" onclick="saveTournament()" class="btn-primary">Initialize Tournament</button>
-                <button onclick="closeModal('manage-modal')" class="btn-ghost">Cancel</button>                
-            </div>
+            <button onclick="saveTournament()" class="btn-save-launch" id="btn-save-main">Initialize Tournament</button>
+            <button onclick="closeModal()" class="btn-exit-login" style="border:none;">Discard and Exit</button>
         </div>
     </div>
 
-    <!-- Credentials View Modal -->
+    <!-- 4. ACCESS CODE POPUP MODAL -->
     <div id="codes-modal" class="modal hidden">
-        <div class="modal-content narrow">
-            <div class="modal-header">
-                <h2>Access Credentials</h2>
-                <button class="close-modal" onclick="closeModal('codes-modal')">&times;</button>
+        <div class="modal-content" style="max-width: 500px;">
+            <h2 style="font-weight: 900;">Access Credentials</h2>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Copy these codes for the tournament officials.</p>
+            
+            <div id="codes-list-container" class="code-list">
+                <!-- Dynamic codes will appear here -->
             </div>
-            <div id="codes-display" class="credential-box"></div>
-            <div class="modal-footer">
-                <button onclick="closeModal('codes-modal')" class="btn-primary">Close Credentials</button>
-            </div>
+
+            <button onclick="document.getElementById('codes-modal').classList.add('hidden')" class="btn-save-launch" style="margin-top:25px;">Close Panel</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+/* =========================================
+   ADMIN LOGIC - FIXED FETCHING & SMART SYNC
+   ========================================= */
+   const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
+const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let state = { editingId: null, tempPhotos: {} };
+
+// 1. AUTHENTICATION
+async function handleAdminLogin() {
+    const email = document.getElementById('adm-email').value;
+    const pass = document.getElementById('adm-pass').value;
+    const { data: admin } = await _client.from('admins').select('*').eq('email', email).eq('password', pass).single();
+
+    if (admin) {
+        sessionStorage.setItem('admin_auth', 'true');
+        document.getElementById('admin-login').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadDashboard();
+    } else { alert("Login Denied: Invalid Credentials."); }
+}
+
+function logout() { sessionStorage.clear(); location.reload(); }
+
+// 2. FIXED DASHBOARD (Correct Competitor Count)
+async function loadDashboard() {
+    const { data: tours, error: tErr } = await _client.from('tournaments').select('*').order('created_at', {ascending: false});
+    const { data: allComps, error: cErr } = await _client.from('competitors').select('tournament_id');
+    
+    if(tErr || cErr) return console.error("Load Error:", tErr || cErr);
+
+    const grid = document.getElementById('tournament-grid');
+    grid.innerHTML = tours.map(t => {
+        const competitorCount = allComps.filter(c => c.tournament_id === t.id).length;
+        
+        return `
+        <div class="t-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:0.7rem; font-weight:800; color:var(--accent);">ID: ${t.short_id}</span>
+                <span style="font-size:0.6rem; color:var(--muted); text-transform:uppercase;">${t.status}</span>
+            </div>
+            <h3>${t.name}</h3>
+            <div class="card-meta">
+                <span><i class="fas fa-users"></i> ${competitorCount}</span>
+                <span><i class="fas fa-gavel"></i> ${t.judge_count}</span>
+                <span><i class="fas fa-tag"></i> ${t.kata_type || 'Single'}</span>
+            </div>
+            <div class="btn-group">
+                <button class="btn-action primary" onclick="editTournament('${t.id}')">Manage</button>
+                <button class="btn-action" onclick="viewCodes('${t.id}')"><i class="fas fa-key"></i> Codes</button>
+                <button class="btn-action danger" onclick="deleteTournament('${t.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `;}).join('');
+}
+
+// 3. DYNAMIC FORM (With ID Tracking for Smart Sync)
+function generateCompetitorRows(existingData = []) {
+    const container = document.getElementById('comp-rows-container');
+    const size = parseInt(document.getElementById('t-comp-size').value);
+    container.innerHTML = "";
+    
+    for(let i=1; i<=size; i++) {
+        const d = existingData[i-1] || { id: '', name: '', art_type: '', photo_url: '' };
+        const row = document.createElement('div');
+        row.className = 'comp-row';
+        row.setAttribute('data-db-id', d.id || ''); // Store DB ID to avoid duplicates
+        
+        row.innerHTML = `
+            <span style="font-weight:900; color:var(--muted)">${i}</span>
+            <input type="text" class="c-name" placeholder="Full Name" value="${d.name || ''}" required>
+            <input type="text" class="c-art" placeholder="Art Name" value="${d.art_type || ''}">
+            <div class="photo-uploader">
+                <img src="${d.photo_url || ''}" style="${d.photo_url ? 'display:block' : 'display:none'}">
+                <span style="${d.photo_url ? 'display:none' : 'display:block'}"><i class="fas fa-camera"></i></span>
+                <input type="file" onchange="previewSelectedPhoto(this, ${i})">
+            </div>
+        `;
+        container.appendChild(row);
+    }
+}
+
+function previewSelectedPhoto(input, index) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const parent = input.parentElement;
+            parent.querySelector('img').src = e.target.result;
+            parent.querySelector('img').style.display = "block";
+            parent.querySelector('span').style.display = "none";
+            state.tempPhotos[index] = input.files[0];
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// 4. FIXED EDIT TOURNAMENT (Perfect Pre-fill)
+async function editTournament(id) {
+    const { data: t } = await _client.from('tournaments').select('*').eq('id', id).single();
+    const { data: comps } = await _client.from('competitors').select('*').eq('tournament_id', id).order('order_index');
+    
+    state.editingId = id;
+    state.tempPhotos = {}; 
+
+    document.getElementById('modal-title').innerText = "Update Tournament";
+    document.getElementById('btn-save-main').innerText = "Update & Sync";
+    
+    document.getElementById('t-name').value = t.name || "";
+    document.getElementById('t-gender').value = t.gender || "Mixed";
+    document.getElementById('t-kata-type').value = t.kata_type || "Single";
+    document.getElementById('t-jcount').value = t.judge_count || "5";
+    document.getElementById('t-min').value = Math.floor(t.performance_time / 60);
+    document.getElementById('t-sec').value = t.performance_time % 60;
+
+    document.getElementById('t-comp-size').value = comps.length;
+    generateCompetitorRows(comps); // Prefills names, arts, and IDs
+    
+    document.getElementById('manage-modal').classList.remove('hidden');
+}
+
+// 5. SMART SYNC SAVE LOGIC
+async function saveTournament() {
+    const name = document.getElementById('t-name').value.trim();
+    const jCount = parseInt(document.getElementById('t-jcount').value);
+    const kataType = document.getElementById('t-kata-type').value;
+    const gender = document.getElementById('t-gender').value;
+    const totalSec = (parseInt(document.getElementById('t-min').value) * 60) + parseInt(document.getElementById('t-sec').value);
+
+    if (!name) return alert("Please enter a Tournament Name.");
+    let tId = state.editingId;
+
+    try {
+        if (tId) {
+            // Update Existing Tournament Header
+            await _client.from('tournaments').update({ 
+                name, judge_count: jCount, kata_type: kataType, gender, 
+                performance_time: totalSec, remaining_time_seconds: totalSec 
+            }).eq('id', tId);
+        } else {
+            // Create New Tournament
+            const shortId = "T" + Math.floor(1000 + Math.random() * 9000);
+            const { data: t, error: errIns } = await _client.from('tournaments').insert({ 
+                name, short_id: shortId, judge_count: jCount, kata_type: kataType, gender, 
+                performance_time: totalSec, remaining_time_seconds: totalSec, status: 'live' 
+            }).select().single();
+            if (errIns) throw errIns;
+            tId = t.id;
+        }
+
+        const rows = document.querySelectorAll('.comp-row');
+        const activeIds = []; // Track IDs to keep
+
+        for (let i = 0; i < rows.length; i++) {
+            const dbId = rows[i].getAttribute('data-db-id');
+            const cName = rows[i].querySelector('.c-name').value.trim();
+            const cArt = rows[i].querySelector('.c-art').value.trim();
+            let photoUrl = rows[i].querySelector('img').src;
+
+            if (!cName) continue;
+
+            // Handle Photo Upload
+            if (state.tempPhotos[i + 1]) {
+                const fName = `photo_${tId}_${i + 1}_${Date.now()}.jpg`;
+                const { data: uploadData } = await _client.storage.from('competitor-photos').upload(fName, state.tempPhotos[i + 1]);
+                if (uploadData) {
+                    const { data: pUrl } = _client.storage.from('competitor-photos').getPublicUrl(fName);
+                    photoUrl = pUrl.publicUrl;
+                }
+            }
+
+            const payload = {
+                tournament_id: tId,
+                name: cName,
+                art_type: cArt,
+                photo_url: (photoUrl && photoUrl.startsWith('http')) ? photoUrl : null,
+                order_index: i + 1
+            };
+
+            if (dbId) {
+                // SMART UPDATE
+                await _client.from('competitors').update(payload).eq('id', dbId);
+                activeIds.push(dbId);
+            } else {
+                // SMART INSERT
+                const { data: newComp } = await _client.from('competitors').insert(payload).select().single();
+                if (newComp) activeIds.push(newComp.id);
+            }
+        }
+
+        // CLEANUP: If editing, delete players that were removed from the bracket
+        if (state.editingId && activeIds.length > 0) {
+            await _client.from('competitors').delete().eq('tournament_id', tId).not('id', 'in', `(${activeIds.join(',')})`);
+        }
+
+        // RESET OFFICIALS: (Purge and re-generate codes to ensure they match current judge count)
+        await _client.from('judges').delete().eq('tournament_id', tId);
+        const sCode = Math.floor(100000 + Math.random() * 900000).toString();
+        await _client.from('judges').insert({ tournament_id: tId, judge_code: sCode, role: 'supervisor' });
+        
+        const judgeEntries = [];
+        for (let i = 0; i < jCount; i++) {
+            judgeEntries.push({ tournament_id: tId, judge_code: Math.floor(100000 + Math.random() * 900000).toString(), role: 'judge' });
+        }
+        await _client.from('judges').insert(judgeEntries);
+
+        state.tempPhotos = {};
+        alert("Tournament Synchronized!");
+        closeModal(); 
+        loadDashboard();
+
+    } catch (err) {
+        console.error("Critical Error:", err);
+        alert("Sync Failed: " + err.message);
+    }
+}
+
+// 6. CODES & DELETION
+async function viewCodes(id) {
+    const { data: js, error } = await _client.from('judges').select('*').eq('tournament_id', id).order('role', {ascending: false});
+    if(error || !js || js.length === 0) return alert("Codes not found.");
+
+    const container = document.getElementById('codes-list-container');
+    container.innerHTML = js.map(j => `
+        <div class="code-item">
+            <div class="code-info"><b>${j.role}</b><span>${j.judge_code}</span></div>
+            <button class="btn-copy" onclick="copyToClipboard('${j.judge_code}', this)"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+    `).join('');
+    document.getElementById('codes-modal').classList.remove('hidden');
+}
+
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Done';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'var(--primary)';
+        }, 2000);
+    });
+}
+
+async function deleteTournament(id) { if(confirm("Delete permanently?")) { await _client.from('tournaments').delete().eq('id', id); loadDashboard(); } }
+
+function openCreateModal() { 
+    state.editingId = null; 
+    document.getElementById('modal-title').innerText = "New Tournament";
+    document.getElementById('btn-save-main').innerText = "Initialize Tournament";
+    document.getElementById('t-name').value = "";
+    generateCompetitorRows(); 
+    document.getElementById('manage-modal').classList.remove('hidden'); 
+}
+
+function closeModal() { document.getElementById('manage-modal').classList.add('hidden'); state.tempPhotos = {}; }
+    </script>
 </body>
 </html>
