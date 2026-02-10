@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Federation Admin | Management Suite</title>
+    <title>Federation Admin | Responsive Management</title>
     
+    <!-- External Resources -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* =========================================
-           PROFESSIONAL ADMIN UI - STYLING
+           CORE STYLING & VARIABLES
            ========================================= */
         :root {
             --primary: #1e293b;
@@ -21,88 +22,91 @@
             --text: #0f172a;
             --muted: #64748b;
             --danger: #ef4444;
+            --success: #10b981;
+            --sidebar-w: 280px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
-
         .hidden { display: none !important; }
 
         /* 1. LOGIN SCREEN */
-        .login-screen {
-            position: fixed; inset: 0; background: var(--primary);
-            display: flex; align-items: center; justify-content: center; z-index: 9999;
-        }
-        .login-card {
-            background: white; padding: 40px; border-radius: 24px;
-            width: 100%; max-width: 400px; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        .login-card i { font-size: 3.5rem; color: var(--accent); margin-bottom: 20px; }
-        .login-card h2 { margin-bottom: 30px; font-weight: 900; color: var(--primary); }
-        
-        .input-group { text-align: left; margin-bottom: 20px; }
+        .login-screen { position: fixed; inset: 0; background: var(--primary); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .login-card { background: white; padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: center; }
+        .login-card i { font-size: 3rem; color: var(--accent); margin-bottom: 20px; }
+        .login-card h2 { margin-bottom: 25px; font-weight: 900; color: var(--primary); font-size: 1.5rem; }
+        .input-group { text-align: left; margin-bottom: 15px; }
         .input-group label { display: block; font-size: 0.75rem; font-weight: 800; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
-        .input-group input, .input-group select { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 1rem; outline: none; }
-        .input-group input:focus { border-color: var(--accent); }
-
-        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .btn-exit-login { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 14px; margin-top: 15px; cursor: pointer; font-weight: 600; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 1rem; outline: none; }
+        .btn-login { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 14px; font-weight: 800; cursor: pointer; }
+        .btn-exit-login { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 12px; margin-top: 15px; cursor: pointer; font-weight: 600; }
 
         /* 2. DASHBOARD LAYOUT */
-        .app-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 280px; background: var(--primary); color: white; padding: 40px 20px; position: fixed; height: 100vh; box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
-        .main-content { margin-left: 280px; flex: 1; padding: 50px; }
-
-        .sidebar h2 { font-size: 1.4rem; color: var(--accent); margin-bottom: 50px; font-weight: 900; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
-        .nav-link { width: 100%; padding: 14px 18px; background: transparent; color: #94a3b8; border: none; border-radius: 12px; text-align: left; cursor: pointer; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; font-weight: 700; transition: 0.2s; }
+        .app-container { display: flex; min-height: 100vh; position: relative; }
+        .mobile-header { display: none; width: 100%; height: 60px; background: var(--primary); color: white; padding: 0 20px; align-items: center; justify-content: space-between; position: fixed; top: 0; z-index: 500; }
+        .sidebar { width: var(--sidebar-w); background: var(--primary); color: white; padding: 40px 20px; position: fixed; height: 100vh; z-index: 1000; transition: transform 0.3s ease; }
+        .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 40px; transition: margin 0.3s ease; }
+        .sidebar h2 { font-size: 1.25rem; color: var(--accent); margin-bottom: 40px; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .nav-link { width: 100%; padding: 14px 18px; background: transparent; color: #94a3b8; border: none; border-radius: 12px; text-align: left; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; gap: 15px; font-weight: 700; text-decoration: none; }
         .nav-link.active { background: var(--accent); color: #000; }
-        .nav-link:hover:not(.active) { background: rgba(255,255,255,0.05); color: white; }
 
-        /* CARDS */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
-        .t-card { background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); transition: 0.3s; }
-        .t-card:hover { transform: translateY(-5px); }
-        .t-card h3 { font-size: 1.25rem; margin-bottom: 15px; font-weight: 800; }
-        .card-meta { display: flex; gap: 15px; margin-bottom: 25px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
-
-        .btn-group { display: flex; gap: 10px; }
-        .btn-action { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; cursor: pointer; font-weight: 700; font-size: 0.8rem; transition: 0.2s; }
+        /* 3. CARDS GRID */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .t-card { background: white; padding: 20px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .t-card h3 { font-size: 1.15rem; margin-bottom: 12px; font-weight: 800; }
+        .card-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+        .btn-group { display: flex; gap: 8px; }
+        .btn-action { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; cursor: pointer; font-weight: 700; font-size: 0.75rem; }
         .btn-action.primary { background: var(--primary); color: white; border: none; }
-        .btn-action.danger { color: var(--danger); border-color: #fee2e2; }
-        .btn-action:hover { opacity: 0.8; }
 
-        /* MODAL */
-        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: white; border-radius: 30px; width: 100%; max-width: 950px; max-height: 90vh; overflow-y: auto; padding: 45px; position: relative; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        /* 4. MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 10px; }
+        .modal-content { background: white; border-radius: 24px; width: 100%; max-width: 950px; max-height: 95vh; overflow-y: auto; padding: 30px; position: relative; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
 
-        /* COMPETITOR LIST */
-        .comp-header { display: grid; grid-template-columns: 50px 1.5fr 1fr 130px; gap: 15px; font-weight: 900; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; padding: 15px; border-bottom: 2px solid var(--border); }
-        .comp-row { display: grid; grid-template-columns: 50px 1.5fr 1fr 130px; gap: 15px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border); }
-        
-        .photo-uploader { position: relative; width: 100%; height: 45px; background: #f1f5f9; border-radius: 10px; border: 1px dashed #cbd5e0; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+        /* COMPACT SYNC BUTTONS */
+        .btn-save-launch { display: inline-block; width: auto; padding: 12px 30px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 900; font-size: 0.9rem; cursor: pointer; margin-top: 25px; transition: 0.2s; }
+        .btn-save-launch:hover { background: #000; }
+
+        /* COMPETITOR TABLE */
+        .comp-header { display: grid; grid-template-columns: 80px 1.5fr 1fr 120px; gap: 10px; font-weight: 900; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; padding: 10px; border-bottom: 2px solid var(--border); }
+        .comp-row { display: grid; grid-template-columns: 80px 1.5fr 1fr 120px; gap: 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .photo-uploader { position: relative; width: 100%; height: 38px; background: #f1f5f9; border-radius: 8px; border: 1px dashed #cbd5e0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .photo-uploader img { width: 100%; height: 100%; object-fit: cover; }
-        .photo-uploader span { font-size: 0.7rem; font-weight: bold; color: var(--muted); }
-        .photo-uploader input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        .photo-uploader input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
 
-        .btn-save-launch { width: 100%; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 15px; font-weight: 900; font-size: 1.1rem; cursor: pointer; margin-top: 35px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        /* CREDENTIALS POPUP (ENHANCED) */
+        .cred-container { background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; margin-top: 15px; }
+        .cred-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; }
+        .cred-item:last-child { border-bottom: none; }
+        .cred-label { font-size: 0.7rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .cred-value { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 900; color: var(--primary); letter-spacing: 1px; }
+        .btn-copy { background: white; border: 1px solid #cbd5e0; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 700; transition: 0.2s; }
+        .btn-copy:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* ACCESS CODE POPUP STYLES */
-        .code-list { display: grid; gap: 15px; margin-top: 20px; }
-        .code-item { 
-            background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; 
-            padding: 15px; display: flex; justify-content: space-between; align-items: center;
+        /* CUSTOM ALERT POPUP */
+        .custom-alert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 15px 30px; border-radius: 50px; font-weight: 700; z-index: 10000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { transform: translate(-50%, -100%); } to { transform: translate(-50%, 0); } }
+
+        /* RESPONSIVENESS */
+        @media (max-width: 1024px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 768px) {
+            .mobile-header { display: flex; }
+            .sidebar { transform: translateX(-100%); width: 260px; padding-top: 80px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 80px 15px 30px 15px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .comp-header { display: none; }
+            .comp-row { grid-template-columns: 1fr; gap: 8px; padding: 20px 10px; background: #fcfcfc; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; }
         }
-        .code-info b { color: var(--accent); text-transform: uppercase; font-size: 0.75rem; display: block; }
-        .code-info span { font-family: monospace; font-size: 1.2rem; font-weight: bold; }
-        .btn-copy { 
-            background: var(--primary); color: white; border: none; padding: 8px 15px; 
-            border-radius: 8px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
-        }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900; }
+        .sidebar-overlay.open { display: block; }
     </style>
 </head>
 <body>
+
+    <div id="alert-anchor"></div>
+    <div id="sb-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <!-- 1. ADMIN LOGIN -->
     <div id="admin-login" class="login-screen">
@@ -122,357 +126,331 @@
         </div>
     </div>
 
-    <!-- 2. ADMIN DASHBOARD -->
+    <!-- MOBILE HEADER -->
+    <header class="mobile-header">
+        <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:1.5rem;"><i class="fas fa-bars"></i></button>
+        <span style="font-weight:900; color:var(--accent);">EKF ADMIN</span>
+        <div style="width:30px"></div>
+    </header>
+
     <div id="admin-dashboard" class="app-container hidden">
-        <aside class="sidebar">
-            <h2><i class="fas fa-shield-alt"></i> EKF ADMIN</h2>
+        <aside id="main-sidebar" class="sidebar">
+            <h2 class="desktop-only"><i class="fas fa-shield-alt"></i> EKF ADMIN</h2>
             <nav>
-                <button class="nav-link active" onclick="location.reload()"><i class="fas fa-chart-line"></i> Dashboard</button>
-                <button class="nav-link" onclick="openCreateModal()"><i class="fas fa-plus-circle"></i> New Tournament</button>
-                <button class="nav-link" style="margin-top:60px; color:#f87171" onclick="logout()"><i class="fas fa-power-off"></i> Sign Out</button>
+                <button class="nav-link active" onclick="loadDashboard(); if(window.innerWidth < 768) toggleSidebar();"><i class="fas fa-chart-line"></i> Dashboard</button>
+                <button class="nav-link" onclick="openCreateModal();"><i class="fas fa-plus-circle"></i> New Tournament</button>
+                <button class="nav-link" style="margin-top:40px; color:#f87171" onclick="logout()"><i class="fas fa-power-off"></i> Sign Out</button>
             </nav>
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 50px;">
-                <h1 style="font-size: 2.2rem; font-weight: 900;">Tournaments</h1>
-                <p style="color: var(--muted); font-weight: 600;">System Management & Real-time Control</p>
+            <header style="margin-bottom: 30px;">
+                <h1 style="font-size: 1.8rem; font-weight: 900;">Tournaments</h1>
+                <p style="color: var(--muted); font-size: 0.9rem;">Real-time management dashboard</p>
             </header>
-            <div id="tournament-grid" class="grid">
-                <!-- Tournaments will load here -->
-            </div>
+            <div id="tournament-grid" class="grid"></div>
         </main>
     </div>
 
     <!-- 3. CONFIG MODAL -->
     <div id="manage-modal" class="modal hidden">
         <div class="modal-content">
-            <h2 id="modal-title" style="margin-bottom: 35px; font-weight: 900; font-size: 1.8rem;">Tournament Settings</h2>
+            <h2 id="modal-title" style="margin-bottom: 25px; font-weight: 900; font-size: 1.5rem;">Tournament Settings</h2>
             
             <div class="form-grid">
                 <div class="input-group">
-                    <label>Tournament Name</label>
-                    <input type="text" id="t-name" placeholder="Enter tournament name">
+                    <label>Event Name</label>
+                    <input type="text" id="t-name">
                 </div>
                 <div class="input-group">
-                    <label>Gender Category</label>
-                    <select id="t-gender">
-                        <option>Male</option><option>Female</option><option>Mixed</option>
+                    <label>Gender</label>
+                    <select id="t-gender" onchange="updateWeightOptions()">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Weight Class</label>
+                    <select id="t-weight-class"></select>
+                </div>
+                <div class="input-group">
+                    <label>Officials (Judges)</label>
+                    <select id="t-jcount">
+                        <option value="3">3 Judges</option>
+                        <option value="5" selected>5 Judges</option>
+                        <option value="7">7 Judges</option>
                     </select>
                 </div>
                 <div class="input-group">
                     <label>Performance Style</label>
                     <select id="t-kata-type">
-                        <option value="Single">Individual (Single)</option>
-                        <option value="Group">Team (Group)</option>
+                        <option value="Single">Individual</option>
+                        <option value="Group">Team</option>
                     </select>
-                </div>
-                <div class="input-group">
-                    <label>Officials (Judges)</label>
-                    <select id="t-jcount">
-                        <option value="3">3 Judges</option><option value="5" selected>5 Judges</option><option value="7">7 Judges</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Allowed Time (M:S)</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="number" id="t-min" value="3">
-                        <input type="number" id="t-sec" value="0">
-                    </div>
                 </div>
                 <div class="input-group">
                     <label>Bracket Size</label>
                     <select id="t-comp-size" onchange="generateCompetitorRows()">
-                        <option value="2" selected>2 Players</option><option value="4">4 Players</option><option value="8">8 Players</option><option value="16">16 Players</option><option value="32">32 Players</option><option value="64">64 Players</option>
+                        <option value="2">2 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="8">8 Players</option>
+                        <option value="16">16 Players</option>
+                        <option value="32">32 Players</option>
+                        <option value="64">64 Players</option>
                     </select>
                 </div>
+                <div class="input-group">
+                    <label>Duration (Min : Max 60 Sec)</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="number" id="t-min" value="3" min="0">
+                        <input type="number" id="t-sec" value="0" min="0">
+                    </div>
+                </div>
             </div>
 
-            <div>
+            <div style="margin-top: 10px;">
                 <div class="comp-header">
-                    <span>#</span><span>Competitor Full Name</span><span>Art/Kata Type</span><span>Photo</span>
+                    <span>Label</span><span>Full Name</span><span>Art/Kata</span><span>Photo</span>
                 </div>
-                <div id="comp-rows-container">
-                    <!-- Rows dynamically generated -->
-                </div>
+                <div id="comp-rows-container"></div>
             </div>
 
-            <button onclick="saveTournament()" class="btn-save-launch" id="btn-save-main">Initialize Tournament</button>
-            <button onclick="closeModal()" class="btn-exit-login" style="border:none;">Discard and Exit</button>
+            <div style="text-align: right;">
+                <button onclick="saveTournament()" class="btn-save-launch" id="btn-save-main">Initialize Tournament</button>
+                <button onclick="closeModal()" class="btn-exit-login" style="border:none; margin-left: 10px; width: auto;">Cancel</button>
+            </div>
         </div>
     </div>
 
-    <!-- 4. ACCESS CODE POPUP MODAL -->
+    <!-- 4. ACCESS CODES MODAL (ENHANCED) -->
     <div id="codes-modal" class="modal hidden">
-        <div class="modal-content" style="max-width: 500px;">
-            <h2 style="font-weight: 900;">Access Credentials</h2>
-            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Copy these codes for the tournament officials.</p>
-            
-            <div id="codes-list-container" class="code-list">
-                <!-- Dynamic codes will appear here -->
-            </div>
-
-            <button onclick="document.getElementById('codes-modal').classList.add('hidden')" class="btn-save-launch" style="margin-top:25px;">Close Panel</button>
+        <div class="modal-content" style="max-width: 480px;">
+            <h2 style="font-weight: 900; margin-bottom: 5px;">Tournament Access</h2>
+            <p style="color: var(--muted); font-size: 0.85rem; margin-bottom: 20px;">Use these credentials to log in on official devices.</p>
+            <div id="codes-list-container" class="cred-container"></div>
+            <button onclick="document.getElementById('codes-modal').classList.add('hidden')" class="btn-save-launch" style="width:100%">Close Access Panel</button>
         </div>
     </div>
 
     <script>
-/* =========================================
-   ADMIN LOGIC - FIXED FETCHING & SMART SYNC
-   ========================================= */
-   const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
-const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_URL = 'https://sxfwqdxkvcxxbbnvwaki.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4ZndxZHhrdmN4eGJibnZ3YWtpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyMjQzNTYsImV4cCI6MjA4NTgwMDM1Nn0.skux7wINToP4i4GfBU_8x3F_nwcSgJiwgcCWfGD0zIA'; 
+        const _client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let state = { editingId: null, tempPhotos: {} };
+        let state = { editingId: null, tempPhotos: {} };
 
-// 1. AUTHENTICATION
-async function handleAdminLogin() {
-    const email = document.getElementById('adm-email').value;
-    const pass = document.getElementById('adm-pass').value;
-    const { data: admin } = await _client.from('admins').select('*').eq('email', email).eq('password', pass).single();
+        // --- CUSTOM POPUP REPLACING ALERT() ---
+        function showNotification(msg) {
+            const el = document.createElement('div');
+            el.className = 'custom-alert';
+            el.innerText = msg;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
 
-    if (admin) {
-        sessionStorage.setItem('admin_auth', 'true');
-        document.getElementById('admin-login').classList.add('hidden');
-        document.getElementById('admin-dashboard').classList.remove('hidden');
-        loadDashboard();
-    } else { alert("Login Denied: Invalid Credentials."); }
-}
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('open');
+            document.getElementById('sb-overlay').classList.toggle('open');
+        }
 
-function logout() { sessionStorage.clear(); location.reload(); }
-
-// 2. FIXED DASHBOARD (Correct Competitor Count)
-async function loadDashboard() {
-    const { data: tours, error: tErr } = await _client.from('tournaments').select('*').order('created_at', {ascending: false});
-    const { data: allComps, error: cErr } = await _client.from('competitors').select('tournament_id');
-    
-    if(tErr || cErr) return console.error("Load Error:", tErr || cErr);
-
-    const grid = document.getElementById('tournament-grid');
-    grid.innerHTML = tours.map(t => {
-        const competitorCount = allComps.filter(c => c.tournament_id === t.id).length;
-        
-        return `
-        <div class="t-card">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-size:0.7rem; font-weight:800; color:var(--accent);">ID: ${t.short_id}</span>
-                <span style="font-size:0.6rem; color:var(--muted); text-transform:uppercase;">${t.status}</span>
-            </div>
-            <h3>${t.name}</h3>
-            <div class="card-meta">
-                <span><i class="fas fa-users"></i> ${competitorCount}</span>
-                <span><i class="fas fa-gavel"></i> ${t.judge_count}</span>
-                <span><i class="fas fa-tag"></i> ${t.kata_type || 'Single'}</span>
-            </div>
-            <div class="btn-group">
-                <button class="btn-action primary" onclick="editTournament('${t.id}')">Manage</button>
-                <button class="btn-action" onclick="viewCodes('${t.id}')"><i class="fas fa-key"></i> Codes</button>
-                <button class="btn-action danger" onclick="deleteTournament('${t.id}')"><i class="fas fa-trash"></i></button>
-            </div>
-        </div>
-    `;}).join('');
-}
-
-// 3. DYNAMIC FORM (With ID Tracking for Smart Sync)
-function generateCompetitorRows(existingData = []) {
-    const container = document.getElementById('comp-rows-container');
-    const size = parseInt(document.getElementById('t-comp-size').value);
-    container.innerHTML = "";
-    
-    for(let i=1; i<=size; i++) {
-        const d = existingData[i-1] || { id: '', name: '', art_type: '', photo_url: '' };
-        const row = document.createElement('div');
-        row.className = 'comp-row';
-        row.setAttribute('data-db-id', d.id || ''); // Store DB ID to avoid duplicates
-        
-        row.innerHTML = `
-            <span style="font-weight:900; color:var(--muted)">${i}</span>
-            <input type="text" class="c-name" placeholder="Full Name" value="${d.name || ''}" required>
-            <input type="text" class="c-art" placeholder="Art Name" value="${d.art_type || ''}">
-            <div class="photo-uploader">
-                <img src="${d.photo_url || ''}" style="${d.photo_url ? 'display:block' : 'display:none'}">
-                <span style="${d.photo_url ? 'display:none' : 'display:block'}"><i class="fas fa-camera"></i></span>
-                <input type="file" onchange="previewSelectedPhoto(this, ${i})">
-            </div>
-        `;
-        container.appendChild(row);
-    }
-}
-
-function previewSelectedPhoto(input, index) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const parent = input.parentElement;
-            parent.querySelector('img').src = e.target.result;
-            parent.querySelector('img').style.display = "block";
-            parent.querySelector('span').style.display = "none";
-            state.tempPhotos[index] = input.files[0];
+        const WEIGHT_CLASSES = {
+            'Male': ['52kg', '57kg', '63kg', '70kg', 'Above 70kg'],
+            'Female': ['47kg', '54kg', '61kg', 'Above 61kg']
         };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
-// 4. FIXED EDIT TOURNAMENT (Perfect Pre-fill)
-async function editTournament(id) {
-    const { data: t } = await _client.from('tournaments').select('*').eq('id', id).single();
-    const { data: comps } = await _client.from('competitors').select('*').eq('tournament_id', id).order('order_index');
-    
-    state.editingId = id;
-    state.tempPhotos = {}; 
-
-    document.getElementById('modal-title').innerText = "Update Tournament";
-    document.getElementById('btn-save-main').innerText = "Update & Sync";
-    
-    document.getElementById('t-name').value = t.name || "";
-    document.getElementById('t-gender').value = t.gender || "Mixed";
-    document.getElementById('t-kata-type').value = t.kata_type || "Single";
-    document.getElementById('t-jcount').value = t.judge_count || "5";
-    document.getElementById('t-min').value = Math.floor(t.performance_time / 60);
-    document.getElementById('t-sec').value = t.performance_time % 60;
-
-    document.getElementById('t-comp-size').value = comps.length;
-    generateCompetitorRows(comps); // Prefills names, arts, and IDs
-    
-    document.getElementById('manage-modal').classList.remove('hidden');
-}
-
-// 5. SMART SYNC SAVE LOGIC
-async function saveTournament() {
-    const name = document.getElementById('t-name').value.trim();
-    const jCount = parseInt(document.getElementById('t-jcount').value);
-    const kataType = document.getElementById('t-kata-type').value;
-    const gender = document.getElementById('t-gender').value;
-    const totalSec = (parseInt(document.getElementById('t-min').value) * 60) + parseInt(document.getElementById('t-sec').value);
-
-    if (!name) return alert("Please enter a Tournament Name.");
-    let tId = state.editingId;
-
-    try {
-        if (tId) {
-            // Update Existing Tournament Header
-            await _client.from('tournaments').update({ 
-                name, judge_count: jCount, kata_type: kataType, gender, 
-                performance_time: totalSec, remaining_time_seconds: totalSec 
-            }).eq('id', tId);
-        } else {
-            // Create New Tournament
-            const shortId = "T" + Math.floor(1000 + Math.random() * 9000);
-            const { data: t, error: errIns } = await _client.from('tournaments').insert({ 
-                name, short_id: shortId, judge_count: jCount, kata_type: kataType, gender, 
-                performance_time: totalSec, remaining_time_seconds: totalSec, status: 'live' 
-            }).select().single();
-            if (errIns) throw errIns;
-            tId = t.id;
+        function updateWeightOptions(val = null) {
+            const gender = document.getElementById('t-gender').value;
+            const dropdown = document.getElementById('t-weight-class');
+            dropdown.innerHTML = (WEIGHT_CLASSES[gender] || ['N/A']).map(w => `<option value="${w}">${w}</option>`).join('');
+            if (val) dropdown.value = val;
         }
 
-        const rows = document.querySelectorAll('.comp-row');
-        const activeIds = []; // Track IDs to keep
+        async function handleAdminLogin() {
+            const email = document.getElementById('adm-email').value;
+            const pass = document.getElementById('adm-pass').value;
+            const { data: admin } = await _client.from('admins').select('*').eq('email', email).eq('password', pass).single();
+            if (admin) {
+                sessionStorage.setItem('admin_auth', 'true');
+                document.getElementById('admin-login').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                loadDashboard();
+            } else { showNotification("Login Denied: Invalid Credentials."); }
+        }
 
-        for (let i = 0; i < rows.length; i++) {
-            const dbId = rows[i].getAttribute('data-db-id');
-            const cName = rows[i].querySelector('.c-name').value.trim();
-            const cArt = rows[i].querySelector('.c-art').value.trim();
-            let photoUrl = rows[i].querySelector('img').src;
+        function logout() { sessionStorage.clear(); location.reload(); }
 
-            if (!cName) continue;
+        async function loadDashboard() {
+            const { data: tours } = await _client.from('tournaments').select('*').order('created_at', {ascending: false});
+            const { data: allComps } = await _client.from('competitors').select('tournament_id');
+            const grid = document.getElementById('tournament-grid');
+            grid.innerHTML = tours.map(t => {
+                const competitorCount = allComps.filter(c => c.tournament_id === t.id).length;
+                return `
+                <div class="t-card">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="font-size:0.7rem; font-weight:800; color:var(--accent);">ID: ${t.short_id}</span>
+                        <span style="font-size:0.6rem; color:var(--muted); text-transform:uppercase;">${t.status}</span>
+                    </div>
+                    <h3>${t.name}</h3>
+                    <div class="card-meta">
+                        <span><i class="fas fa-users"></i> ${competitorCount}</span>
+                        <span><i class="fas fa-gavel"></i> ${t.judge_count}</span>
+                        <span><i class="fas fa-tag"></i> ${t.kata_type || 'Single'}</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn-action primary" onclick="editTournament('${t.id}')">Manage</button>
+                        <button class="btn-action" onclick="viewCodes('${t.id}')">Codes</button>
+                        <button class="btn-action" style="color:var(--danger)" onclick="deleteTournament('${t.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
 
-            // Handle Photo Upload
-            if (state.tempPhotos[i + 1]) {
-                const fName = `photo_${tId}_${i + 1}_${Date.now()}.jpg`;
-                const { data: uploadData } = await _client.storage.from('competitor-photos').upload(fName, state.tempPhotos[i + 1]);
-                if (uploadData) {
-                    const { data: pUrl } = _client.storage.from('competitor-photos').getPublicUrl(fName);
-                    photoUrl = pUrl.publicUrl;
+        function generateCompetitorRows(existingData = []) {
+            const container = document.getElementById('comp-rows-container');
+            const size = parseInt(document.getElementById('t-comp-size').value);
+            container.innerHTML = "";
+            for(let i=1; i<=size; i++) {
+                const d = existingData[i-1] || { id: '', name: '', art_type: '', photo_url: '' };
+                const row = document.createElement('div');
+                row.className = 'comp-row';
+                row.setAttribute('data-db-id', d.id || '');
+                row.innerHTML = `
+                    <span style="font-weight:900; color:var(--muted); font-size: 0.7rem">Player ${i}</span>
+                    <input type="text" class="c-name" placeholder="Full Name" value="${d.name || ''}" required>
+                    <input type="text" class="c-art" placeholder="Art Name" value="${d.art_type || ''}">
+                    <div class="photo-uploader">
+                        <img src="${d.photo_url || ''}" style="${d.photo_url ? 'display:block' : 'display:none'}">
+                        <span style="${d.photo_url ? 'display:none' : 'display:block'}"><i class="fas fa-camera"></i></span>
+                        <input type="file" onchange="previewPhoto(this, ${i})">
+                    </div>`;
+                container.appendChild(row);
+            }
+        }
+
+        function previewPhoto(input, idx) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const parent = input.parentElement;
+                    parent.querySelector('img').src = e.target.result;
+                    parent.querySelector('img').style.display = "block";
+                    parent.querySelector('span').style.display = "none";
+                    state.tempPhotos[idx] = input.files[0];
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function saveTournament() {
+            const name = document.getElementById('t-name').value.trim();
+            const jCount = parseInt(document.getElementById('t-jcount').value);
+            const kataType = document.getElementById('t-kata-type').value;
+            const gender = document.getElementById('t-gender').value;
+            const weightClass = document.getElementById('t-weight-class').value;
+            
+            // --- SMART TIMER CALCULATION ---
+            let totalMin = parseInt(document.getElementById('t-min').value) || 0;
+            let rawSec = parseInt(document.getElementById('t-sec').value) || 0;
+            
+            if (rawSec >= 60) {
+                totalMin += Math.floor(rawSec / 60);
+                rawSec = rawSec % 60;
+                document.getElementById('t-min').value = totalMin;
+                document.getElementById('t-sec').value = rawSec;
+            }
+            const totalSec = (totalMin * 60) + rawSec;
+
+            if (!name) return showNotification("Required: Event Name.");
+            let tId = state.editingId;
+
+            try {
+                if (tId) {
+                    await _client.from('tournaments').update({ name, judge_count: jCount, kata_type: kataType, gender, weight_class: weightClass, performance_time: totalSec, remaining_time_seconds: totalSec }).eq('id', tId);
+                } else {
+                    const shortId = "T" + Math.floor(1000 + Math.random() * 9000);
+                    const { data: t } = await _client.from('tournaments').insert({ name, short_id: shortId, judge_count: jCount, kata_type: kataType, gender, weight_class: weightClass, performance_time: totalSec, remaining_time_seconds: totalSec, status: 'live' }).select().single();
+                    tId = t.id;
                 }
-            }
 
-            const payload = {
-                tournament_id: tId,
-                name: cName,
-                art_type: cArt,
-                photo_url: (photoUrl && photoUrl.startsWith('http')) ? photoUrl : null,
-                order_index: i + 1
-            };
+                const rows = document.querySelectorAll('.comp-row');
+                const activeIds = [];
+                for (let i = 0; i < rows.length; i++) {
+                    const dbId = rows[i].getAttribute('data-db-id');
+                    const cName = rows[i].querySelector('.c-name').value.trim();
+                    if (!cName) continue;
+                    let photoUrl = rows[i].querySelector('img').src;
 
-            if (dbId) {
-                // SMART UPDATE
-                await _client.from('competitors').update(payload).eq('id', dbId);
-                activeIds.push(dbId);
-            } else {
-                // SMART INSERT
-                const { data: newComp } = await _client.from('competitors').insert(payload).select().single();
-                if (newComp) activeIds.push(newComp.id);
-            }
+                    if (state.tempPhotos[i+1]) {
+                        const fName = `photo_${tId}_${i+1}_${Date.now()}.jpg`;
+                        const { data } = await _client.storage.from('competitor-photos').upload(fName, state.tempPhotos[i+1]);
+                        if (data) photoUrl = _client.storage.from('competitor-photos').getPublicUrl(fName).data.publicUrl;
+                    }
+
+                    const payload = { tournament_id: tId, name: cName, art_type: rows[i].querySelector('.c-art').value.trim(), photo_url: photoUrl.startsWith('http') ? photoUrl : null, order_index: i + 1 };
+                    if (dbId) { await _client.from('competitors').update(payload).eq('id', dbId); activeIds.push(dbId); }
+                    else { const { data: n } = await _client.from('competitors').insert(payload).select().single(); if(n) activeIds.push(n.id); }
+                }
+
+                if (state.editingId && activeIds.length > 0) await _client.from('competitors').delete().eq('tournament_id', tId).not('id', 'in', `(${activeIds.join(',')})`);
+                
+                await _client.from('judges').delete().eq('tournament_id', tId);
+                await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 900000).toString(), role: 'supervisor' });
+                for (let i = 0; i < jCount; i++) await _client.from('judges').insert({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 900000).toString(), role: 'judge' });
+
+                state.tempPhotos = {}; showNotification("Tournament Created!"); closeModal(); loadDashboard();
+            } catch (err) { console.error(err); showNotification("Save Error."); }
         }
 
-        // CLEANUP: If editing, delete players that were removed from the bracket
-        if (state.editingId && activeIds.length > 0) {
-            await _client.from('competitors').delete().eq('tournament_id', tId).not('id', 'in', `(${activeIds.join(',')})`);
+        async function editTournament(id) {
+            const { data: t } = await _client.from('tournaments').select('*').eq('id', id).single();
+            const { data: comps } = await _client.from('competitors').select('*').eq('tournament_id', id).order('order_index');
+            state.editingId = id; state.tempPhotos = {};
+            document.getElementById('modal-title').innerText = "Manage Tournament";
+            document.getElementById('btn-save-main').innerText = "Update & Sync";
+            document.getElementById('t-name').value = t.name;
+            document.getElementById('t-gender').value = t.gender || "Male";
+            updateWeightOptions(t.weight_class);
+            document.getElementById('t-jcount').value = t.judge_count;
+            document.getElementById('t-kata-type').value = t.kata_type || "Single";
+            document.getElementById('t-min').value = Math.floor(t.performance_time / 60);
+            document.getElementById('t-sec').value = t.performance_time % 60;
+            document.getElementById('t-comp-size').value = comps.length;
+            generateCompetitorRows(comps);
+            document.getElementById('manage-modal').classList.remove('hidden');
         }
 
-        // RESET OFFICIALS: (Purge and re-generate codes to ensure they match current judge count)
-        await _client.from('judges').delete().eq('tournament_id', tId);
-        const sCode = Math.floor(1000 + Math.random() * 9000).toString();
-        await _client.from('judges').insert({ tournament_id: tId, judge_code: sCode, role: 'supervisor' });
-        
-        const judgeEntries = [];
-        for (let i = 0; i < jCount; i++) {
-            judgeEntries.push({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 9000).toString(), role: 'judge' });
+        async function viewCodes(id) {
+            const { data: js } = await _client.from('judges').select('*').eq('tournament_id', id).order('role', {ascending: false});
+            const container = document.getElementById('codes-list-container');
+            container.innerHTML = js.map(j => `
+                <div class="cred-item">
+                    <div>
+                        <div class="cred-label">${j.role}</div>
+                        <div class="cred-value">${j.judge_code}</div>
+                    </div>
+                    <button class="btn-copy" onclick="copyCode('${j.judge_code}', this)">COPY</button>
+                </div>`).join('');
+            document.getElementById('codes-modal').classList.remove('hidden');
         }
-        await _client.from('judges').insert(judgeEntries);
 
-        state.tempPhotos = {};
-        alert("Tournament Synchronized!");
-        closeModal(); 
-        loadDashboard();
+        function copyCode(text, btn) {
+            navigator.clipboard.writeText(text).then(() => { btn.innerText = "DONE"; setTimeout(() => btn.innerText = "COPY", 2000); });
+        }
 
-    } catch (err) {
-        console.error("Critical Error:", err);
-        alert("Sync Failed: " + err.message);
-    }
-}
+        async function deleteTournament(id) { if(confirm("Delete permanently?")) { await _client.from('tournaments').delete().eq('id', id); loadDashboard(); } }
 
-// 6. CODES & DELETION
-async function viewCodes(id) {
-    const { data: js, error } = await _client.from('judges').select('*').eq('tournament_id', id).order('role', {ascending: false});
-    if(error || !js || js.length === 0) return alert("Codes not found.");
+        function openCreateModal() { 
+            state.editingId = null; state.tempPhotos = {};
+            document.getElementById('modal-title').innerText = "New Tournament";
+            document.getElementById('btn-save-main').innerText = "Initialize Tournament";
+            document.getElementById('t-name').value = "";
+            document.getElementById('t-comp-size').value = "2"; // Default player 1 and 2
+            updateWeightOptions(); generateCompetitorRows(); 
+            document.getElementById('manage-modal').classList.remove('hidden'); 
+        }
 
-    const container = document.getElementById('codes-list-container');
-    container.innerHTML = js.map(j => `
-        <div class="code-item">
-            <div class="code-info"><b>${j.role}</b><span>${j.judge_code}</span></div>
-            <button class="btn-copy" onclick="copyToClipboard('${j.judge_code}', this)"><i class="fas fa-copy"></i> Copy</button>
-        </div>
-    `).join('');
-    document.getElementById('codes-modal').classList.remove('hidden');
-}
-
-function copyToClipboard(text, btn) {
-    navigator.clipboard.writeText(text).then(() => {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Done';
-        btn.style.background = '#10b981';
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.background = 'var(--primary)';
-        }, 2000);
-    });
-}
-
-async function deleteTournament(id) { if(confirm("Delete permanently?")) { await _client.from('tournaments').delete().eq('id', id); loadDashboard(); } }
-
-function openCreateModal() { 
-    state.editingId = null; 
-    document.getElementById('modal-title').innerText = "New Tournament";
-    document.getElementById('btn-save-main').innerText = "Initialize Tournament";
-    document.getElementById('t-name').value = "";
-    generateCompetitorRows(); 
-    document.getElementById('manage-modal').classList.remove('hidden'); 
-}
-
-function closeModal() { document.getElementById('manage-modal').classList.add('hidden'); state.tempPhotos = {}; }
+        function closeModal() { document.getElementById('manage-modal').classList.add('hidden'); }
     </script>
 </body>
 </html>
