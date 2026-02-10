@@ -414,12 +414,12 @@ async function saveTournament() {
 
         // RESET OFFICIALS: (Purge and re-generate codes to ensure they match current judge count)
         await _client.from('judges').delete().eq('tournament_id', tId);
-        const sCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const sCode = Math.floor(1000 + Math.random() * 9000).toString();
         await _client.from('judges').insert({ tournament_id: tId, judge_code: sCode, role: 'supervisor' });
         
         const judgeEntries = [];
         for (let i = 0; i < jCount; i++) {
-            judgeEntries.push({ tournament_id: tId, judge_code: Math.floor(100000 + Math.random() * 900000).toString(), role: 'judge' });
+            judgeEntries.push({ tournament_id: tId, judge_code: Math.floor(1000 + Math.random() * 9000).toString(), role: 'judge' });
         }
         await _client.from('judges').insert(judgeEntries);
 
