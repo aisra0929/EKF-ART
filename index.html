@@ -1,277 +1,1255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    <title>Karate Scoreboard</title>
-    <link rel="icon" href="assets/favicon.png" type="image/png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<title>Karate Scoreboard</title>
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+/* =========================================
+1. GENERIC UTILITIES
+========================================= */
+.hidden {
+display: none !important;
+}
+:root {
+        --color-ao: #0056b3;
+        --color-aka: #c82333;
+        --color-yellow: #ffc107;
+        --color-dark: #1a1a1a;
+        --color-bg: #000000;
+        --color-light: #ffffff;
+        --font-size-score: 90px;
+        --landing-red: #D32F2F;
+    }
+
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-light);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100svh;
+        margin: 0;
+        padding: 20px 0 60px;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    /* =========================================
+       2. SCOREBOARD STYLES & FULLSCREEN FIXES
+       ========================================= */
+
+    .app-shell {
+        width: 100%;
+        max-width: 1000px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: var(--color-bg);
+    }
+
+    /* Normalized Mobile Fullscreen Behavior */
+    .app-shell:fullscreen {
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-width: none !important;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left) !important;
+        box-sizing: border-box;
+        overflow-y: auto;
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
+    .app-shell:-webkit-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-width: none !important;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left) !important;
+        box-sizing: border-box;
+        background-color: black;
+    }
+
+    .shell-header {
+        width: min(950px, 90vw);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .round-indicator {
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        font-size: 1.1rem;
+        color: #ccc;
+    }
+
+    .ghost-btn, .primary-btn, .icon-btn {
+        border: 1px solid #444;
+        background: transparent;
+        color: white;
+        padding: 8px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .ghost-btn:hover, .icon-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .danger-btn { border-color: #ff4d4f; color: #ff8082; }
+    .danger-btn:hover { background: rgba(255, 77, 79, 0.15); color: #ffb3b5; }
+    .primary-btn { background: var(--color-yellow); color: #111; border-color: var(--color-yellow); font-weight: bold; }
+    .primary-btn:hover { filter: brightness(1.05); }
+    .icon-btn { border-radius: 50%; width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+
+    .setup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .setup-card {
+        width: min(520px, 95vw);
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 16px;
+        padding: 30px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    }
+
+    .setup-card h2 { margin-top: 0; text-transform: uppercase; letter-spacing: 3px; text-align: center; }
+    .field-label { display: block; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; margin: 15px 0 5px; color: #bbb; }
+    .field-control { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #333; background: #000; color: white; font-size: 1rem; box-sizing: border-box; }
+    .player-name-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+    .player-name-grid input { width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 6px; border: 1px solid #333; background: #050505; color: white; font-size: 0.95rem; }
+    .player-input { display: flex; flex-direction: column; gap: 4px; }
+    .player-flag-row { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #999; }
+    .player-flag-row input[type="file"] { font-size: 0.75rem; }
+    .player-flag-preview { width: 28px; height: 20px; border-radius: 3px; border: 1px solid #333; object-fit: cover; display: none; }
+    .setup-actions { margin-top: 25px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    .scoreboard-suite { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    .scoreboard-flags { width: min(950px, 95vw); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; margin-top: 4px; }
+    .scoreboard-flag { height: 58px; width: auto; object-fit: contain; }
+
+    .app-shell:fullscreen #scoreboard-ui { width: 100%; justify-content: center; --font-size-score: min(22vh, 22vw); }
+    .app-shell:fullscreen .scoreboard { width: min(1100px, 98vw); }
+
+    .round-banner {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-10px);
+        background: var(--color-yellow); color: #111; padding: 10px 25px; border-radius: 999px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4); opacity: 0; pointer-events: none;
+        transition: opacity 0.3s ease, transform 0.3s ease; z-index: 100000;
+        font-weight: bold; letter-spacing: 2px;
+    }
+    .round-banner.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    .main-title { width: 100%; display: flex; align-items: center; justify-content: center; gap: 20px; margin: 10px 0 20px 0; padding: 10px 40px; box-sizing: border-box;}
+    .main-title-text { flex: 1; text-align: center; font-size: 3rem; text-transform: uppercase; letter-spacing: 3px; text-shadow: 0 0 10px rgba(255,255,255,0.3); font-weight: 800; }
+    .title-image { height: clamp(40px, 6vw, 80px); width: auto; object-fit: contain; flex-shrink: 0; }
+
+    .referee-container { margin-bottom: 15px; width: 300px; }
+    .referee-input { width: 100%; background: transparent; border: none; border-bottom: 1px solid #555; color: #aaa; text-align: center; font-size: 1.2rem; padding: 5px; outline: none; }
+    .referee-input:focus { border-bottom-color: var(--color-yellow); color: white; }
+
+    .scoreboard {
+        width: min(950px, 95vw);
+        border: 3px solid #333;
+        display: flex;
+        flex-direction: column;
+        user-select: none;
+        background-color: var(--color-dark);
+        box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    .top-section { display: flex; justify-content: space-between; height: 220px; }
+    .team { flex: 1; display: flex; align-items: center; position: relative; border: 1px solid #333; }
+    .ao { background-color: #000; border-left: 5px solid var(--color-ao); }
+    .aka { background-color: #000; border-right: 5px solid var(--color-aka); }
+
+    .team-info { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .team-name-input { background: transparent; border: none; color: white; font-size: 1.5rem; font-weight: bold; text-align: center; width: 80%; margin-bottom: 5px; text-transform: uppercase; }
+    .ao .team-name-input { background-color: var(--color-ao); padding: 2px 5px; border-radius: 4px; }
+    .aka .team-name-input { background-color: var(--color-aka); padding: 2px 5px; border-radius: 4px; }
+
+    .score-display {
+        font-size: var(--font-size-score); line-height: 1; font-weight: bold; font-family: 'Courier New', monospace;
+        padding: 10px 20px; border: 2px solid #333; background-color: #0a0a0a; width: 120px; text-align: center;
+    }
+
+    .points-buttons { display: flex; flex-direction: column; width: 80px; height: 100%; }
+    .score-btn { flex: 1; border: none; cursor: pointer; font-weight: bold; color: white; font-size: 13px; border-bottom: 1px solid rgba(0,0,0,0.2); transition: filter 0.2s; }
+    .score-btn:hover { filter: brightness(1.2); }
+    .ao .score-btn { background-color: var(--color-ao); }
+    .aka .score-btn { background-color: var(--color-aka); }
+
+    .senshu-container { width: 80px; display: flex; justify-content: center; align-items: center; height: 100%; background-color: #111; }
+    .senshu-indicator { width: 50px; height: 50px; background-color: #333; border-radius: 50%; color: #000; font-size: 2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s; }
+    .senshu-indicator.active { background-color: var(--color-yellow); box-shadow: 0 0 15px var(--color-yellow); }
+
+    .center-spacer { width: 40px; background-color: #222; display: flex; align-items: center; justify-content: center; border-left: 1px solid #444; border-right: 1px solid #444; }
+    .swap-btn { background: none; border: none; color: #777; font-size: 24px; cursor: pointer; }
+    .swap-btn:hover { color: white; }
+
+    .bottom-section { display: flex; height: 160px; border-top: 2px solid #444; }
+    .penalty-grid { flex: 1.3; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+    .penalty-btn { background-color: #000; color: white; border: 1px solid #333; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
+    .penalty-btn:hover { background-color: #222; }
+    .penalty-btn.active { background-color: var(--color-yellow); color: black; }
+    .minus, .plus { background-color: var(--color-aka); }
+    .h, .hc, .s-btn, .k-btn { background-color: #111; }
+    .h.active, .hc.active, .s-btn.active, .k-btn.active { background-color: red; color: white; }
+
+    .time-center { flex: 1; background-color: #222; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 2px solid #444; border-right: 2px solid #444; }
+    .timer-container { background-color: black; padding: 5px 15px; border: 2px solid #555; border-radius: 5px; }
+    #timer { font-size: 3rem; font-weight: bold; color: #00ffcc; font-family: 'Courier New', monospace; }
+
+    .controls-section { display: flex; align-items: center; justify-content: center; margin-top: 20px; gap: 20px; background-color: #111; padding: 15px 30px; border-radius: 50px; border: 1px solid #333; flex-wrap: wrap; }
+    .controls-section #history-btn { margin-left: auto; }
+    .ctrl-btn { background: #333; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+    .ctrl-btn:hover { background: #555; }
+    .big-play { width: 70px; height: 70px; font-size: 2rem; background-color: var(--color-yellow); color: black; }
+    .big-play:hover { background-color: #e0a800; }
+    .winning-gap-info { font-size: 1.2rem; font-weight: bold; color: #aaa; font-family: monospace; padding: 0 15px; border-left: 1px solid #444; border-right: 1px solid #444; }
+
+    .bracket-panel { width: min(950px, 95vw); margin-top: 30px; background: #0b0b0b; border: 1px solid #333; border-radius: 12px; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.5); overflow-x: auto; }
+    .bracket-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+    .bracket-grid { display: flex; gap: 15px; padding-bottom: 10px; }
+    .round-column { min-width: 180px; position: relative; }
+    .round-column h4 { text-transform: uppercase; letter-spacing: 2px; font-size: 0.85rem; margin-bottom: 10px; color: #aaa; }
+    .match-card { border: 1px solid #333; border-radius: 10px; padding: 10px; margin-bottom: 12px; background: #111; box-shadow: inset 0 0 15px rgba(0,0,0,0.4); position: relative; }
+    .match-card .match-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
+    .match-card .competitor { display: flex; justify-content: space-between; padding: 6px; background: #050505; margin-bottom: 5px; border-radius: 6px; font-size: 0.95rem; }
+    .match-card .competitor:last-child { margin-bottom: 0; }
+    .match-card.winner-known { border-color: var(--color-yellow); }
+    .bracket-flag { height: 16px; width: auto; object-fit: contain; margin-right: 4px; border-radius: 2px; }
+    .round-column:not(:last-child) .match-card::after { content: ''; position: absolute; top: 50%; right: -15px; width: 15px; border-top: 1px solid #444; opacity: 0.6; }
+    .round-column:not(:first-child)::before { content: ''; position: absolute; top: 0; bottom: 0; left: 0; border-left: 1px solid #333; opacity: 0.35; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 20px; overflow-y: auto; }
+    .modal.hidden { display: none; }
+    .modal-card { width: min(700px, 95vw); background: #111; border: 1px solid #444; border-radius: 16px; padding: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .history-header { gap: 15px; flex-wrap: wrap; }
+    .history-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .history-body { display: flex; gap: 15px; flex-wrap: wrap; }
+    .history-list-wrapper { flex: 0 0 220px; max-height: 320px; overflow-y: auto; width: 100%; }
+    #history-list { list-style: none; margin: 0; padding: 0; }
+    #history-list li { padding: 8px 10px; border: 1px solid #333; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.9rem; flex-wrap: wrap; }
+    #history-list li.active, #history-list li:hover { border-color: var(--color-yellow); color: var(--color-yellow); }
+    .history-entry { flex: 1; text-align: left; background: transparent; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; }
+    .history-download-btn { border: 1px solid #444; border-radius: 999px; background: #151515; color: white; padding: 4px 12px; font-size: 0.8rem; cursor: pointer; transition: background 0.2s; }
+    .history-download-btn:hover { background: #222; }
+    #history-preview { flex: 1; min-height: 280px; border: 1px solid #222; border-radius: 10px; background: #060606; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: pre-line; overflow-y: auto; width: 100%; }
+    .winner-card p { font-size: 1rem; margin-bottom: 15px; }
+    .winner-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px; }
+    .winner-actions.hidden { display: none; }
+    .winner-controls { text-align: center; }
+
+    [data-tooltip]:hover::after { content: attr(data-tooltip); position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: black; padding: 4px 8px; font-size: 12px; border-radius: 4px; white-space: nowrap; pointer-events: none; z-index: 100; }
+
+    /* Landing Page Styles */
+    .landing-container {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh;
+        background-color: #000; z-index: 200000; display: flex;
+        overflow: hidden; color: white; font-family: 'Segoe UI', sans-serif;
+    }
+    .split-screen { height: 100%; position: relative; }
+    .left-split { width: 45%; background-color: #111; display: flex; flex-direction: column; padding: 40px 60px; justify-content: center; align-items: center; z-index: 2; box-sizing: border-box; }
+    .right-split { width: 55%; background-color: var(--landing-red); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+    .landing-content { display: flex; flex-direction: column; gap: 25px; margin-bottom: 50px; text-align: center; align-items: center; width: 100%; }
+    .main-headline {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 4rem;
+        line-height: 0.9;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+    }
+    .landing-buttons { display: flex; gap: 20px; margin-top: 20px; justify-content: center; }
+    .landing-btn { padding: 15px 40px; font-size: 1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; border: 2px solid white; }
+    .landing-btn.filled { background: white; color: black; border-radius: 30px; animation: fadeInUp 1s ease forwards; opacity: 0; }
+    .landing-btn.filled:hover { background: var(--landing-red); color: white; box-shadow: 0 0 20px var(--landing-red); transform: translateY(-2px); border-color: var(--landing-red); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .landing-desc { color: #aaa; font-size: 0.9rem; line-height: 1.6; max-width: 400px; margin: 0; }
+
+    .bg-typography { position: absolute; top: 0; left: 0; width: 100%; height: 125%; display: flex; flex-direction: column; justify-content: center; opacity: 0.15; pointer-events: none; line-height: 0.85; overflow: hidden; }
+    .bg-typography span { font-size: 12rem; font-weight: 900; color: black; white-space: nowrap; margin-left: -50px; text-transform: uppercase; }
+    .hero-image-container { position: relative; z-index: 5; height: 85%; display: flex; align-items: flex-end; }
+    .hero-image { height: 100%; width: auto; object-fit: contain; filter: drop-shadow(10px 10px 20px rgba(0,0,0,0.5)); }
+
+    /* RESPONSIVE MEDIA QUERIES */
+
+    @media (max-width: 1024px) {
+        .landing-container { flex-direction: column; overflow-y: auto; }
+        .split-screen { width: 100%; }
+        .left-split { height: 60vh; padding: 20px; }
+        .right-split { height: 40vh; }
+        .main-headline { font-size: 2.5rem; }
+        .hero-image-container { height: 90%; }
+        
+        .top-section { height: auto; min-height: 200px; }
+        .score-display { width: 90px; padding: 5px; font-size: 60px; }
+    }
+
+    @media (max-width: 768px) {
+        .top-section { flex-direction: column; height: auto; }
+        .team.ao { border: 1px solid #333; margin-bottom: 5px; }
+        .center-spacer { width: 100%; height: 40px; border: 1px solid #444; }
+        .team.aka { border: 1px solid #333; margin-top: 5px; }
+
+        .team { padding: 5px; }
+        .points-buttons { width: 50px; }
+        .score-btn { font-size: 10px; }
+        .senshu-container { width: 50px; }
+        .senshu-indicator { width: 35px; height: 35px; font-size: 1.2rem; }
+        .score-display { font-size: 3rem; width: 60px; }
+        .team-name-input { font-size: 1.2rem; }
+
+        .bottom-section { flex-direction: column; height: auto; }
+        .time-center { order: 1; padding: 10px 0; border: none; border-bottom: 1px solid #333; }
+        .penalty-grid.ao-penalties { order: 2; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .penalty-grid.aka-penalties { order: 3; padding-top: 5px; }
+        
+        .main-title-text { font-size: 1.8rem; }
+        .landing-desc { font-size: 0.8rem; padding: 0 10px; }
+        .bg-typography span { font-size: 6rem; }
+        .modal-card { width: 98vw; padding: 15px; }
+        .bracket-panel { padding: 10px; }
+        .match-card { min-width: 140px; }
+
+        /* Normalized height and row layout for Mobile Fullscreen */
+        .app-shell:fullscreen .top-section,
+        .app-shell:-webkit-full-screen .top-section {
+            flex-direction: row !important;
+            height: auto !important;
+        }
+        .app-shell:fullscreen .bottom-section,
+        .app-shell:-webkit-full-screen .bottom-section {
+            flex-direction: row !important;
+            height: auto !important;
+        }
+        .app-shell:fullscreen .score-display,
+        .app-shell:-webkit-full-screen .score-display {
+            font-size: min(15vw, 15vh) !important;
+            width: auto !important;
+        }
+        .app-shell:fullscreen .time-center,
+        .app-shell:-webkit-full-screen .time-center {
+            order: initial !important;
+            border: 2px solid #444 !important;
+        }
+        .app-shell:fullscreen .penalty-grid,
+        .app-shell:-webkit-full-screen .penalty-grid {
+            order: initial !important;
+        }
+        .history-download-btn {
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: var(--color-yellow);
+    color: black;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+.history-download-btn:active {
+    transform: scale(0.95);
+}
+    }
+</style>
 </head>
 <body>
-
-    <!-- ========================== -->
-    <!-- LANDING PAGE SECTION       -->
-    <!-- ========================== -->
-    <section id="landing-page" class="landing-container">
-        <div class="split-screen left-split">
-            <div class="landing-content">
-                <h1 class="main-headline">WELCOME TO EKF<br>SCOREBOARD</h1>
-                
-                <div class="landing-buttons">
-                    <button id="enter-site-btn" class="landing-btn filled">Start Tournament</button>
-<button onclick="window.location.href='art_page.html'" class="landing-btn filled" style="margin-left: 10px; border-color: #000000; color: #000000;">Art Tournament</button>
-                </div>
-
-                <p class="landing-desc">
-                    Professional Scoreboard System for EKF Tournaments. 
-                    Manage brackets, track scores, and handle match timers efficiently.
-                </p>
+<section id="landing-page" class="landing-container">
+    <div class="split-screen left-split">
+        <div class="landing-content">
+            <h1 class="main-headline">WELCOME TO EKF<br>SCOREBOARD</h1>
+            <div class="landing-buttons">
+                <button id="enter-site-btn" class="landing-btn filled">Start Tournament</button>
+                <button onclick="window.location.href='art_page.html'" class="landing-btn filled" style="margin-left: 10px; border-color: #000000; color: #000000;">Art Tournament</button>
             </div>
+            <p class="landing-desc">
+                Professional Scoreboard System for EKF Tournaments. 
+                Manage brackets, track scores, and handle match timers efficiently.
+            </p>
         </div>
-
-        <div class="split-screen right-split">
-            <!-- Background Typography -->
-            <div class="bg-typography">
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ </span>
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
-                <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
-                <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
-            </div>
-
-            <!-- Central Action Image -->
-            <div class="hero-image-container">
-                <img src="assets/3d-figure.png" alt="Karate Fighter" class="hero-image">
-            </div>
+    </div>
+    <div class="split-screen right-split">
+        <div class="bg-typography">
+            <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
+            <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ </span>
+            <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
+            <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
+            <span>የኢትዮጵያ ካራቴ ፌዴሬሽን የኢትዮጵያ ካራቴ ፌዴሬሽን</span>
+            <span>ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ ካራቴ</span>
         </div>
-    </section>
-
-    <!-- ========================== -->
-    <!-- SCOREBOARD APP SHELL       -->
-    <!-- ========================== -->
-    <div id="round-banner" class="round-banner hidden">Round 1 – Get Ready</div>
-
-    <!-- Main App Shell (Hidden initially) -->
-    <div class="app-shell hidden" id="main-app-shell">
-        
-        <!-- Setup Screen (Overlay) -->
-        <div id="setup-screen" class="setup-overlay hidden">
-            <div class="setup-card">
-                <h2>Tournament Setup</h2>
-                <label class="field-label" for="player-count-select">How many players will participate?</label>
-                <select id="player-count-select" class="field-control">
-                    <option value="2">2 Players</option>
-                    <option value="4">4 Players</option>
-                    <option value="8">8 Players</option>
-                    <option value="16">16 Players</option>
-                    <option value="32">32 Players</option>
-                    <option value="64">64 Players</option>
-                </select>
-    
-                <div id="player-name-grid" class="player-name-grid"></div>
-    
-                <label class="field-label" for="match-duration-select">Match Duration</label>
-                <select id="match-duration-select" class="field-control"></select>
-
-                <!-- NEW CATEGORY SELECT -->
-                <label class="field-label" for="category-select">Category</label>
-                <select id="category-select" class="field-control">
-                    <option value="Senior" selected>Senior</option>
-                    <option value="Cadet">Cadet</option>
-                </select>
-    
-                <label class="field-label" for="gender-select">Gender</label>
-                <select id="gender-select" class="field-control">
-                    <option value="Male" selected>Male</option>
-                    <option value="Female">Female</option>
-                </select>
-    
-                <label class="field-label" for="weight-class-select">Weight Class</label>
-                <select id="weight-class-select" class="field-control"></select>
-    
-                <div class="setup-actions">
-                    <button id="start-tournament-btn" class="primary-btn">Start Tournament</button>
-                    <button class="ghost-btn" data-history-trigger>View History</button>
-                </div>
-            </div>
+        <div class="hero-image-container">
+            <img src="assets/3d-figure.png" alt="Karate Fighter" class="hero-image">
         </div>
+    </div>
+</section>
 
-        <!-- Scoreboard Header -->
-        <div class="shell-header">
-            <button id="back-to-landing-btn" class="ghost-btn">&larr; Home</button>
-            <div class="round-indicator">Round <span id="round-number">1</span></div>
-            <button id="history-btn" class="ghost-btn">View History</button>
-        </div>
+<div id="round-banner" class="round-banner hidden">Round 1 – Get Ready</div>
 
-        <div class="main-title" role="heading" aria-level="1">
-            <img src="assets/ethiopian-flag.png" alt="Ethiopian flag" class="title-image title-image--flag" onerror="this.style.display='none'">
-            <span class="main-title-text">EKF SCOREBOARD</span>
-            <img src="assets/logo.png" alt="EKF logo" class="title-image title-image--logo" onerror="this.style.display='none'">
-        </div>
-
-        <div class="referee-container">
-            <input type="text" class="referee-input" placeholder="Referee Name" id="referee-input">
-        </div>
-
-        <!-- Scoreboard UI -->
-        <div id="scoreboard-ui" class="scoreboard-suite">
-            <div class="scoreboard">
-                <div class="top-section">
-                    <div class="team ao" data-side="left">
-                        <div class="points-buttons">
-                            <button class="score-btn ippon" data-team="ao" data-points="3" data-tooltip="Add Ippon (3)">Ippon</button>
-                            <button class="score-btn wazaari" data-team="ao" data-points="2" data-tooltip="Add Waza-ari (2)">Wazaari</button>
-                            <button class="score-btn yuko" data-team="ao" data-points="1" data-tooltip="Add Yuko (1)">Yuko</button>
-                            <button class="score-btn subtract" data-team="ao" data-points="-1" data-tooltip="Remove 1">-</button>
-                        </div>
-                        <div class="team-info">
-                            <input type="text" class="team-name-input" id="ao-name-input" value="AO" data-team="ao">
-                            <div class="score-display" id="ao-score">0</div>
-                        </div>
-                        <div class="senshu-container">
-                            <div class="senshu-indicator" id="ao-senshu" data-team="ao" data-tooltip="Senshu (Advantage)">S</div>
-                        </div>
-                    </div>
-
-                    <div class="center-spacer">
-                        <button class="swap-btn" id="swap-sides-btn" data-tooltip="Swap Colors/Names">&#8646;</button>
-                    </div>
-
-                    <div class="team aka" data-side="right">
-                        <div class="senshu-container">
-                            <div class="senshu-indicator" id="aka-senshu" data-team="aka" data-tooltip="Senshu (Advantage)">S</div>
-                        </div>
-                        <div class="team-info">
-                            <input type="text" class="team-name-input" id="aka-name-input" value="AKA" data-team="aka">
-                            <div class="score-display" id="aka-score">0</div>
-                        </div>
-                        <div class="points-buttons">
-                            <button class="score-btn ippon" data-team="aka" data-points="3" data-tooltip="Add Ippon (3)">Ippon</button>
-                            <button class="score-btn wazaari" data-team="aka" data-points="2" data-tooltip="Add Waza-ari (2)">Wazaari</button>
-                            <button class="score-btn yuko" data-team="aka" data-points="1" data-tooltip="Add Yuko (1)">Yuko</button>
-                            <button class="score-btn subtract" data-team="aka" data-points="-1" data-tooltip="Remove 1">-</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bottom-section">
-                    <div class="penalty-grid ao-penalties">
-                        <button class="penalty-btn c1" data-team="ao" data-type="warning">C1</button>
-                        <button class="penalty-btn c2" data-team="ao" data-type="warning">C2</button>
-                        <button class="penalty-btn c3" data-team="ao" data-type="warning">C3</button>
-                        <button class="penalty-btn minus" data-team="ao" data-type="action">-</button>
-                        <button class="penalty-btn hc" data-team="ao" data-type="dq">HC</button>
-                        <button class="penalty-btn h" data-team="ao" data-type="dq">H</button>
-                        <button class="penalty-btn s-btn" data-team="ao" data-type="dq">S</button>
-                        <button class="penalty-btn k-btn" data-team="ao" data-type="dq">K</button>
-                    </div>
-
-                    <div class="time-center">
-                        <div class="timer-container">
-                            <div class="time-display" id="timer" data-tooltip="Match Time">02:00</div>
-                        </div>
-                    </div>
-
-                    <div class="penalty-grid aka-penalties">
-                        <button class="penalty-btn plus" data-team="aka" data-type="action">+</button>
-                        <button class="penalty-btn c1" data-team="aka" data-type="warning">C1</button>
-                        <button class="penalty-btn c2" data-team="aka" data-type="warning">C2</button>
-                        <button class="penalty-btn c3" data-team="aka" data-type="warning">C3</button>
-                        <button class="penalty-btn k-btn" data-team="aka" data-type="dq">K</button>
-                        <button class="penalty-btn s-btn" data-team="aka" data-type="dq">S</button>
-                        <button class="penalty-btn h" data-team="aka" data-type="dq">H</button>
-                        <button class="penalty-btn hc" data-team="aka" data-type="dq">HC</button>                       
-                        
-                    </div>
-                </div>
-            </div>
-
-            <div class="scoreboard-flags">
-                <img id="ao-flag-score" class="scoreboard-flag scoreboard-flag-ao" alt="AO flag" style="display:none;">
-                <img id="aka-flag-score" class="scoreboard-flag scoreboard-flag-aka" alt="AKA flag" style="display:none;">
-            </div>
-
-            <div class="controls-section">
-                <button id="reset-timer-btn" class="ctrl-btn" data-tooltip="Reset Match">&#128472;</button> 
-                <button id="start-pause-btn" class="ctrl-btn big-play" data-tooltip="Start/Pause">&#9658;</button>
-                <div class="winning-gap-info">Gap: <span id="winning-gap-value">8</span></div>
-                <button id="fullscreen-btn" class="ctrl-btn" data-tooltip="Fullscreen">&#x26F6;</button> 
-            </div>
-        </div>
-
-        <section class="bracket-panel">
-            <div class="bracket-header">
-                <h2>Tournament Bracket</h2>
-                <span id="bracket-status">Awaiting setup</span>
-            </div>
-            <div id="bracket-grid" class="bracket-grid"></div>
-        </section>
-
-        <!-- Modals -->
-        <div id="history-modal" class="modal hidden">
-            <div class="modal-card">
-                <header class="modal-header history-header">
-                    <h3>Match History</h3>
-                    <div class="history-actions">
-                        <button id="erase-history-btn" class="ghost-btn danger-btn">Erase History</button>
-                        <button class="icon-btn" data-close-history>&times;</button>
-                    </div>
-                </header>
-                <div class="history-body">
-                    <aside class="history-list-wrapper">
-                        <ul id="history-list"></ul>
-                    </aside>
-                    <article id="history-preview" aria-live="polite">Select a log to preview its contents.</article>
-                </div>
-            </div>
-        </div>
-
-        <!-- DECISION CONFIRMATION MODAL -->
-        <div id="decision-modal" class="modal hidden">
-            <div class="modal-card winner-card">
-                <header class="modal-header">
-                    <h3 id="decision-title">Confirm Action</h3>
-                    <button class="icon-btn" id="decision-close">&times;</button>
-                </header>
-                <p id="decision-message" style="margin: 20px 0; font-size: 1.1rem; line-height: 1.5;"></p>
-                <div class="winner-actions">
-                    <button id="decision-confirm-btn" class="primary-btn danger-btn" style="border-color: red; color: white; background: #990000;">CONFIRM</button>
-                    <button id="decision-cancel-btn" class="ghost-btn">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- WINNER MODAL (MANUAL DECLARE BUTTONS REMOVED) -->
-        <div id="winner-modal" class="modal hidden">
-            <div class="modal-card winner-card">
-                <header class="modal-header">
-                    <h3 id="winner-title">Winner</h3>
-                    <button class="icon-btn" id="winner-modal-close">&times;</button>
-                </header>
-                <p id="winner-message"></p>
-                <!-- Manual Declare Buttons Removed Here -->
-                <div class="winner-controls">
-                    <button id="winner-modal-next" class="primary-btn">Load Next Match</button>
-                </div>
+<div class="app-shell hidden" id="main-app-shell">
+    <div id="setup-screen" class="setup-overlay hidden">
+        <div class="setup-card">
+            <h2>Tournament Setup</h2>
+            <label class="field-label" for="player-count-select">How many players will participate?</label>
+            <select id="player-count-select" class="field-control">
+                <option value="2">2 Players</option>
+                <option value="4">4 Players</option>
+                <option value="8">8 Players</option>
+                <option value="16">16 Players</option>
+                <option value="32">32 Players</option>
+                <option value="64">64 Players</option>
+            </select>
+            <div id="player-name-grid" class="player-name-grid"></div>
+            <label class="field-label" for="match-duration-select">Match Duration</label>
+            <select id="match-duration-select" class="field-control"></select>
+            <label class="field-label" for="category-select">Category</label>
+            <select id="category-select" class="field-control">
+                <option value="Senior" selected>Senior</option>
+                <option value="Cadet">Cadet</option>
+            </select>
+            <label class="field-label" for="gender-select">Gender</label>
+            <select id="gender-select" class="field-control">
+                <option value="Male" selected>Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <label class="field-label" for="weight-class-select">Weight Class</label>
+            <select id="weight-class-select" class="field-control"></select>
+            <div class="setup-actions">
+                <button id="start-tournament-btn" class="primary-btn">Start Tournament</button>
+                <button class="ghost-btn" data-history-trigger>View History</button>
             </div>
         </div>
     </div>
-    
-    <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then((reg) => console.log('Service Worker Registered!', reg.scope))
-                .catch((err) => console.log('Service Worker Registration Failed:', err));
-        });
-    }
-    </script>
 
-    <script src="script.js"></script>
+    <div class="shell-header">
+        <button id="back-to-landing-btn" class="ghost-btn">&larr; Home</button>
+        <div class="round-indicator">Round <span id="round-number">1</span></div>
+        <button id="history-btn" class="ghost-btn">View History</button>
+    </div>
+
+    <div class="main-title" role="heading" aria-level="1">
+        <img src="assets/ethiopian-flag.png" alt="Ethiopian flag" class="title-image title-image--flag" onerror="this.style.display='none'">
+        <span class="main-title-text">EKF SCOREBOARD</span>
+        <img src="assets/logo.png" alt="EKF logo" class="title-image title-image--logo" onerror="this.style.display='none'">
+    </div>
+
+    <div class="referee-container">
+        <input type="text" class="referee-input" placeholder="Referee Name" id="referee-input">
+    </div>
+
+    <div id="scoreboard-ui" class="scoreboard-suite">
+        <div class="scoreboard">
+            <div class="top-section">
+                <div class="team ao" data-side="left">
+                    <div class="points-buttons">
+                        <button class="score-btn ippon" data-team="ao" data-points="3" data-tooltip="Add Ippon (3)">Ippon</button>
+                        <button class="score-btn wazaari" data-team="ao" data-points="2" data-tooltip="Add Waza-ari (2)">Wazaari</button>
+                        <button class="score-btn yuko" data-team="ao" data-points="1" data-tooltip="Add Yuko (1)">Yuko</button>
+                        <button class="score-btn subtract" data-team="ao" data-points="-1" data-tooltip="Remove 1">-</button>
+                    </div>
+                    <div class="team-info">
+                        <input type="text" class="team-name-input" id="ao-name-input" value="AO" data-team="ao">
+                        <div class="score-display" id="ao-score">0</div>
+                    </div>
+                    <div class="senshu-container">
+                        <div class="senshu-indicator" id="ao-senshu" data-team="ao" data-tooltip="Senshu (Advantage)">S</div>
+                    </div>
+                </div>
+                <div class="center-spacer">
+                    <button class="swap-btn" id="swap-sides-btn" data-tooltip="Swap Colors/Names">&#8646;</button>
+                </div>
+                <div class="team aka" data-side="right">
+                    <div class="senshu-container">
+                        <div class="senshu-indicator" id="aka-senshu" data-team="aka" data-tooltip="Senshu (Advantage)">S</div>
+                    </div>
+                    <div class="team-info">
+                        <input type="text" class="team-name-input" id="aka-name-input" value="AKA" data-team="aka">
+                        <div class="score-display" id="aka-score">0</div>
+                    </div>
+                    <div class="points-buttons">
+                        <button class="score-btn ippon" data-team="aka" data-points="3" data-tooltip="Add Ippon (3)">Ippon</button>
+                        <button class="score-btn wazaari" data-team="aka" data-points="2" data-tooltip="Add Waza-ari (2)">Wazaari</button>
+                        <button class="score-btn yuko" data-team="aka" data-points="1" data-tooltip="Add Yuko (1)">Yuko</button>
+                        <button class="score-btn subtract" data-team="aka" data-points="-1" data-tooltip="Remove 1">-</button>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-section">
+                <div class="penalty-grid ao-penalties">
+                    <button class="penalty-btn c1" data-team="ao" data-type="warning">C1</button>
+                    <button class="penalty-btn c2" data-team="ao" data-type="warning">C2</button>
+                    <button class="penalty-btn c3" data-team="ao" data-type="warning">C3</button>
+                    <button class="penalty-btn minus" data-team="ao" data-type="action">-</button>
+                    <button class="penalty-btn hc" data-team="ao" data-type="dq">HC</button>
+                    <button class="penalty-btn h" data-team="ao" data-type="dq">H</button>
+                    <button class="penalty-btn s-btn" data-team="ao" data-type="dq">S</button>
+                    <button class="penalty-btn k-btn" data-team="ao" data-type="dq">K</button>
+                </div>
+                <div class="time-center">
+                    <div class="timer-container">
+                        <div class="time-display" id="timer" data-tooltip="Match Time">02:00</div>
+                    </div>
+                </div>
+                <div class="penalty-grid aka-penalties">
+                    <button class="penalty-btn plus" data-team="aka" data-type="action">+</button>
+                    <button class="penalty-btn c1" data-team="aka" data-type="warning">C1</button>
+                    <button class="penalty-btn c2" data-team="aka" data-type="warning">C2</button>
+                    <button class="penalty-btn c3" data-team="aka" data-type="warning">C3</button>
+                    <button class="penalty-btn k-btn" data-team="aka" data-type="dq">K</button>
+                    <button class="penalty-btn s-btn" data-team="aka" data-type="dq">S</button>
+                    <button class="penalty-btn h" data-team="aka" data-type="dq">H</button>
+                    <button class="penalty-btn hc" data-team="aka" data-type="dq">HC</button>
+                </div>
+            </div>
+        </div>
+        <div class="scoreboard-flags">
+            <img id="ao-flag-score" class="scoreboard-flag scoreboard-flag-ao" alt="AO flag" style="display:none;">
+            <img id="aka-flag-score" class="scoreboard-flag scoreboard-flag-aka" alt="AKA flag" style="display:none;">
+        </div>
+        <div class="controls-section">
+            <button id="reset-timer-btn" class="ctrl-btn" data-tooltip="Reset Match">&#128472;</button> 
+            <button id="start-pause-btn" class="ctrl-btn big-play" data-tooltip="Start/Pause">&#9658;</button>
+            <div class="winning-gap-info">Gap: <span id="winning-gap-value">8</span></div>
+            <button id="fullscreen-btn" class="ctrl-btn" data-tooltip="Fullscreen">&#x26F6;</button> 
+        </div>
+    </div>
+
+    <section class="bracket-panel">
+        <div class="bracket-header">
+            <h2>Tournament Bracket</h2>
+            <span id="bracket-status">Awaiting setup</span>
+        </div>
+        <div id="bracket-grid" class="bracket-grid"></div>
+    </section>
+
+    <div id="history-modal" class="modal hidden">
+        <div class="modal-card">
+            <header class="modal-header history-header">
+                <h3>Match History</h3>
+                <div class="history-actions">
+                    <button id="erase-history-btn" class="ghost-btn danger-btn">Erase History</button>
+                    <button class="icon-btn" data-close-history>&times;</button>
+                </div>
+            </header>
+            <div class="history-body">
+                <aside class="history-list-wrapper">
+                    <ul id="history-list"></ul>
+                </aside>
+                <article id="history-preview" aria-live="polite">Select a log to preview its contents.</article>
+            </div>
+        </div>
+    </div>
+
+    <div id="decision-modal" class="modal hidden">
+        <div class="modal-card winner-card">
+            <header class="modal-header">
+                <h3 id="decision-title">Confirm Action</h3>
+                <button class="icon-btn" id="decision-close">&times;</button>
+            </header>
+            <p id="decision-message" style="margin: 20px 0; font-size: 1.1rem; line-height: 1.5;"></p>
+            <div class="winner-actions">
+                <button id="decision-confirm-btn" class="primary-btn danger-btn" style="border-color: red; color: white; background: #990000;">CONFIRM</button>
+                <button id="decision-cancel-btn" class="ghost-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-modal" class="modal hidden">
+        <div class="modal-card winner-card">
+            <header class="modal-header">
+                <h3 id="winner-title">Winner</h3>
+                <button class="icon-btn" id="winner-modal-close">&times;</button>
+            </header>
+            <p id="winner-message"></p>
+            <div class="winner-controls">
+                <button id="winner-modal-next" class="primary-btn">Load Next Match</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const MATCH_DURATIONS = [
+            '00:30', '01:00', '01:30', '02:00', '02:30',
+            '03:00', '03:30', '04:00', '04:30', '05:00',
+        ];
+        
+        const WEIGHT_CLASSES = {
+            Senior: {
+                Male: ['-60 kg', '-67 kg', '-75 kg', '-84 kg', '+84 kg'],
+                Female: ['-50 kg', '-55 kg', '-61 kg', '-68 kg', '+68 kg'],
+            },
+            Cadet: {
+                Male: ['52kg', '57kg', '63kg', '70kg', 'Above 70kg'],
+                Female: ['47kg', '54kg', '61kg', 'Above 61kg'],
+            }
+        };
+
+        const STORAGE_KEY = 'ekfScoreboardLogs';
+        const GAP_LIMIT = 8;
+        const PDF_LINE_LIMIT = 90;
+        const PDF_PAGE = { width: 612, height: 792, margin: 50, lineHeight: 14 };
+
+        const els = {
+            landingPage: document.getElementById('landing-page'),
+            enterSiteBtn: document.getElementById('enter-site-btn'),
+            appShell: document.getElementById('main-app-shell'),
+            backToLandingBtn: document.getElementById('back-to-landing-btn'),
+            setupOverlay: document.getElementById('setup-screen'),
+            playerCountSelect: document.getElementById('player-count-select'),
+            playerGrid: document.getElementById('player-name-grid'),
+            matchDurationSelect: document.getElementById('match-duration-select'),
+            categorySelect: document.getElementById('category-select'),
+            genderSelect: document.getElementById('gender-select'),
+            weightSelect: document.getElementById('weight-class-select'),
+            startTournamentBtn: document.getElementById('start-tournament-btn'),
+            historyTriggers: document.querySelectorAll('[data-history-trigger], #history-btn'),
+            roundBanner: document.getElementById('round-banner'),
+            roundNumber: document.getElementById('round-number'),
+            aoNameInput: document.getElementById('ao-name-input'),
+            akaNameInput: document.getElementById('aka-name-input'),
+            aoScore: document.getElementById('ao-score'),
+            akaScore: document.getElementById('aka-score'),
+            aoSenshu: document.getElementById('ao-senshu'),
+            akaSenshu: document.getElementById('aka-senshu'),
+            scoreButtons: document.querySelectorAll('.score-btn'),
+            penaltyButtons: document.querySelectorAll('.penalty-btn'),
+            startPauseBtn: document.getElementById('start-pause-btn'),
+            resetBtn: document.getElementById('reset-timer-btn'),
+            timerDisplay: document.getElementById('timer'),
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            scoreboardUi: document.getElementById('scoreboard-ui'),
+            aoFlagScore: document.getElementById('ao-flag-score'),
+            akaFlagScore: document.getElementById('aka-flag-score'),
+            swapBtn: document.getElementById('swap-sides-btn'),
+            refereeInput: document.getElementById('referee-input'),
+            historyModal: document.getElementById('history-modal'),
+            historyList: document.getElementById('history-list'),
+            historyPreview: document.getElementById('history-preview'),
+            historyClose: document.querySelector('[data-close-history]'),
+            eraseHistoryBtn: document.getElementById('erase-history-btn'),
+            winnerModal: document.getElementById('winner-modal'),
+            winnerModalClose: document.getElementById('winner-modal-close'),
+            winnerTitle: document.getElementById('winner-title'),
+            winnerMessage: document.getElementById('winner-message'),
+            winnerNextBtn: document.getElementById('winner-modal-next'),
+            decisionModal: document.getElementById('decision-modal'),
+            decisionTitle: document.getElementById('decision-title'),
+            decisionMessage: document.getElementById('decision-message'),
+            decisionConfirmBtn: document.getElementById('decision-confirm-btn'),
+            decisionCancelBtn: document.getElementById('decision-cancel-btn'),
+            decisionClose: document.getElementById('decision-close'),
+            bracketGrid: document.getElementById('bracket-grid'),
+            bracketStatus: document.getElementById('bracket-status'),
+        };
+
+        const state = {
+            timer: { duration: 120, remaining: 120, ticking: false, intervalId: null },
+            scores: { ao: 0, aka: 0 },
+            penalties: { ao: [], aka: [] },
+            roundCount: 1,
+            logBuffer: [],
+            matchStartTime: null,
+            tournament: {
+                playerCount: 0,
+                players: [],
+                rounds: [],
+                active: { roundIndex: 0, matchIndex: 0 },
+                division: { category: 'Senior', gender: 'Male', weightClass: '' },
+            },
+            playerFlags: {},
+            controlsLocked: true,
+            pendingDecision: null 
+        };
+
+        if (els.enterSiteBtn) {
+            els.enterSiteBtn.addEventListener('click', () => {
+                els.landingPage.classList.add('hidden');
+                els.appShell.classList.remove('hidden');
+                els.setupOverlay.classList.remove('hidden');
+            });
+        }
+
+        if (els.backToLandingBtn) {
+            els.backToLandingBtn.addEventListener('click', () => {
+                els.appShell.classList.add('hidden');
+                els.landingPage.classList.remove('hidden');
+                els.setupOverlay.classList.add('hidden');
+                if (getFullscreenElement()) exitFullscreen();
+            });
+        }
+
+        const secondsFromLabel = (label) => {
+            const [m, s] = label.split(':').map(Number);
+            return (m * 60) + s;
+        };
+
+        const formatClock = (totalSeconds) => {
+            const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+            const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        };
+
+
+        // PDF Generation Helpers
+    const escapePdfText = (text) => text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+    const wrapPdfLines = (text) => {
+        const wrapped = [];
+        const rawLines = text.split('\n');
+        rawLines.forEach((line) => {
+            let working = line || ' ';
+            while (working.length > PDF_LINE_LIMIT) {
+                wrapped.push(working.slice(0, PDF_LINE_LIMIT));
+                working = working.slice(PDF_LINE_LIMIT);
+            }
+            wrapped.push(working.length ? working : ' ');
+        });
+        return wrapped;
+    };
+    const createPdfBlob = (text) => {
+        const lines = wrapPdfLines(text).map(escapePdfText);
+        const maxLinesPerPage = Math.floor((PDF_PAGE.height - (PDF_PAGE.margin * 2)) / PDF_PAGE.lineHeight);
+        const chunks = [];
+        for (let i = 0; i < lines.length; i += maxLinesPerPage) {
+            chunks.push(lines.slice(i, i + maxLinesPerPage));
+        }
+        if (!chunks.length) chunks.push([' ']);
+
+        const objects = [];
+        const addObject = (body) => { objects.push(body); return objects.length; };
+        addObject('<< /Type /Catalog /Pages 2 0 R >>');
+        const pagesIndex = addObject('__PAGES__');
+        const fontIndex = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+        const pageNumbers = [];
+        chunks.forEach((chunk) => {
+            let contentStream = 'BT\n/F1 12 Tf\n14 TL\n';
+            contentStream += `50 ${PDF_PAGE.height - PDF_PAGE.margin} Td\n`;
+            chunk.forEach((line, idx) => {
+                if (idx > 0) contentStream += 'T*\n';
+                contentStream += `(${line || ' '}) Tj\n`;
+            });
+            contentStream += 'ET';
+            const contentIndex = addObject(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
+            const pageIndex = addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_PAGE.width} ${PDF_PAGE.height}] /Contents ${contentIndex} 0 R /Resources << /Font << /F1 ${fontIndex} 0 R >> >> >>`);
+            pageNumbers.push(pageIndex);
+        });
+        objects[pagesIndex - 1] = `<< /Type /Pages /Kids [${pageNumbers.map((num) => `${num} 0 R`).join(' ')}] /Count ${pageNumbers.length} >>`;
+        let pdf = '%PDF-1.4\n';
+        const offsets = [0];
+        objects.forEach((body, idx) => {
+            offsets[idx + 1] = pdf.length;
+            pdf += `${idx + 1} 0 obj\n${body}\nendobj\n`;
+        });
+        const xrefPosition = pdf.length;
+        pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+        for (let i = 1; i <= objects.length; i += 1) {
+            pdf += `${offsets[i].toString().padStart(10, '0')} 00000 n \n`;
+        }
+        pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`;
+        return new Blob([pdf], { type: 'application/pdf' });
+    };
+    const downloadLogAsPdf = (log) => {
+        const blob = createPdfBlob(log.content);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = log.filename.replace('.txt', '.pdf');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    };
+
+        const showToast = (text) => {
+            els.roundBanner.textContent = text;
+            els.roundBanner.classList.remove('hidden');
+            requestAnimationFrame(() => els.roundBanner.classList.add('visible'));
+            setTimeout(() => {
+                els.roundBanner.classList.remove('visible');
+                setTimeout(() => els.roundBanner.classList.add('hidden'), 300);
+            }, 2500);
+        };
+
+        const renderPlayerInputs = () => {
+            const count = Number(els.playerCountSelect.value);
+            els.playerGrid.innerHTML = '';
+            for (let i = 1; i <= count; i += 1) {
+                const index = i - 1;
+                const wrapper = document.createElement('label');
+                wrapper.className = 'player-input';
+                wrapper.innerHTML = `
+                    Player ${i}
+                    <input type="text" data-player-index="${index}" placeholder="Leave empty for default">
+                    <div class="player-flag-row">
+                        <input type="file" accept="image/*" data-player-flag="${index}">
+                        <img class="player-flag-preview" data-player-flag-preview="${index}" alt="Flag preview">
+                    </div>
+                `;
+                els.playerGrid.appendChild(wrapper);
+                const preview = wrapper.querySelector('.player-flag-preview');
+                const existingFlag = state.playerFlags[index];
+                if (existingFlag && preview) {
+                    preview.src = existingFlag;
+                    preview.style.display = 'block';
+                }
+            }
+        };
+
+        const populateMatchDurations = () => {
+            const fragment = document.createDocumentFragment();
+            MATCH_DURATIONS.forEach((label) => {
+                const opt = document.createElement('option');
+                opt.value = label;
+                opt.textContent = label;
+                if (label === '02:00') opt.selected = true;
+                fragment.appendChild(opt);
+            });
+            els.matchDurationSelect.appendChild(fragment);
+        };
+
+        const populateWeightClasses = (category, gender) => {
+            const classes = WEIGHT_CLASSES[category][gender] || [];
+            els.weightSelect.innerHTML = '';
+            classes.forEach((label, index) => {
+                const opt = document.createElement('option');
+                opt.value = label;
+                opt.textContent = label;
+                if (index === 0) opt.selected = true;
+                els.weightSelect.appendChild(opt);
+            });
+        };
+
+        const syncDivisionSelection = () => {
+            state.tournament.division = {
+                category: els.categorySelect.value,
+                gender: els.genderSelect.value,
+                weightClass: els.weightSelect.value,
+            };
+        };
+
+        const gatherPlayerConfigs = () => {
+            const inputs = els.playerGrid.querySelectorAll('input[data-player-index]');
+            return Array.from(inputs).map((input) => {
+                const idx = Number(input.dataset.playerIndex);
+                const name = input.value.trim();
+                const flag = state.playerFlags[idx] || null;
+                return { name, seed: idx + 1, flag };
+            });
+        };
+
+        const createInitialBracket = (players) => {
+            const rounds = [];
+            let currentPlayers = players.map((entry, idx) => {
+                if (typeof entry === 'string') return { name: entry, seed: idx + 1, flag: null };
+                return { name: entry.name, seed: entry.seed ?? idx + 1, flag: entry.flag || null };
+            });
+            let roundIndex = 0;
+            while (currentPlayers.length > 1) {
+                const roundMatches = [];
+                for (let i = 0; i < currentPlayers.length; i += 2) {
+                    roundMatches.push({
+                        id: `R${roundIndex + 1}-M${(i / 2) + 1}`,
+                        players: [currentPlayers[i] || null, currentPlayers[i + 1] || null],
+                        winner: null,
+                        complete: false,
+                    });
+                }
+                rounds.push(roundMatches);
+                currentPlayers = roundMatches.map(() => ({ name: 'TBD', seed: null, flag: null }));
+                roundIndex += 1;
+            }
+            state.tournament.rounds = rounds;
+        };
+
+        const renderBracket = () => {
+            const { rounds } = state.tournament;
+            els.bracketGrid.innerHTML = '';
+            rounds.forEach((matches, roundIdx) => {
+                const column = document.createElement('div');
+                column.className = 'round-column';
+                const title = document.createElement('h4');
+                title.textContent = `Round ${roundIdx + 1}`;
+                column.appendChild(title);
+                matches.forEach((match) => {
+                    const p1 = match.players[0] || {};
+                    const p2 = match.players[1] || {};
+                    const p1Flag = p1.flag ? `<img src="${p1.flag}" alt="" class="bracket-flag">` : '';
+                    const p2Flag = p2.flag ? `<img src="${p2.flag}" alt="" class="bracket-flag">` : '';
+                    const p1Name = p1.name || `Player ${p1.seed || '?'}`;
+                    const p2Name = p2.name || `Player ${p2.seed || '?'}`;
+                    const p1DQ = p1.disqualified ? ' <span style="color:red; font-size:0.7em">(DQ)</span>' : '';
+                    const p2DQ = p2.disqualified ? ' <span style="color:red; font-size:0.7em">(DQ)</span>' : '';
+                    const card = document.createElement('div');
+                    card.className = `match-card ${match.winner ? 'winner-known' : ''}`;
+                    card.innerHTML = `
+                        <div class="match-title">${match.id}</div>
+                        <div class="competitor">${p1Flag}<span>${p1Name}${p1DQ}</span> <span>${match.winner === 0 ? '✔' : ''}</span></div>
+                        <div class="competitor">${p2Flag}<span>${p2Name}${p2DQ}</span> <span>${match.winner === 1 ? '✔' : ''}</span></div>
+                    `;
+                    column.appendChild(card);
+                });
+                els.bracketGrid.appendChild(column);
+            });
+            const division = state.tournament.division;
+            const divisionLabel = division ? ` • ${division.category} ${division.gender} ${division.weightClass}` : '';
+            els.bracketStatus.textContent = `Round ${state.tournament.active.roundIndex + 1} • Match ${state.tournament.active.matchIndex + 1}${divisionLabel}`;
+        };
+
+        const updateScoreDisplays = () => {
+            els.aoScore.textContent = state.scores.ao;
+            els.akaScore.textContent = state.scores.aka;
+        };
+
+        const resetPenalties = () => {
+            els.penaltyButtons.forEach((btn) => btn.classList.remove('active'));
+            state.penalties = { ao: [], aka: [] };
+        };
+
+        const resetSenshu = () => {
+            [els.aoSenshu, els.akaSenshu].forEach((indicator) => indicator.classList.remove('active'));
+        };
+
+        const resetScores = () => {
+            state.scores = { ao: 0, aka: 0 };
+            updateScoreDisplays();
+        };
+
+        const updateTimerDisplay = () => {
+            els.timerDisplay.textContent = formatClock(state.timer.remaining);
+        };
+
+        const setTimerDuration = (seconds) => {
+            state.timer.duration = seconds;
+            state.timer.remaining = seconds;
+            updateTimerDisplay();
+        };
+
+        const lockControls = (locked) => {
+            state.controlsLocked = locked;
+            [...els.scoreButtons, ...els.penaltyButtons, els.swapBtn, els.aoSenshu, els.akaSenshu].forEach((el) => {
+                el.disabled = locked;
+                el.classList.toggle('disabled', locked);
+            });
+        };
+
+        const startTimer = () => {
+            if (state.timer.ticking || state.controlsLocked) return;
+            state.timer.ticking = true;
+            state.matchStartTime = state.matchStartTime || new Date();
+            els.startPauseBtn.innerHTML = '&#10074;&#10074;';
+            state.timer.intervalId = setInterval(() => {
+                if (state.timer.remaining <= 0) {
+                    stopTimer();
+                    const winner = decideWinnerByScore();
+                    if (winner) {
+                        declareWinner(winner, 'Time elapsed');
+                    } else {
+                        lockControls(true);
+                        els.winnerTitle.textContent = 'Time up';
+                        els.winnerMessage.textContent = 'Scores tied. Please declare a winner.';
+                        els.winnerModal.classList.remove('hidden');
+                    }
+                    return;
+                }
+                state.timer.remaining -= 1;
+                updateTimerDisplay();
+            }, 1000);
+        };
+
+        const stopTimer = () => {
+            if (state.timer.intervalId) { clearInterval(state.timer.intervalId); state.timer.intervalId = null; }
+            state.timer.ticking = false;
+            els.startPauseBtn.innerHTML = '&#9658;';
+        };
+
+        const resetTimer = () => { stopTimer(); state.timer.remaining = state.timer.duration; updateTimerDisplay(); };
+
+        const handleScoreChange = (team, delta, label) => {
+            if (state.controlsLocked) return;
+            const next = state.scores[team] + delta;
+            state.scores[team] = Math.max(0, next);
+            updateScoreDisplays();
+            recordLog(`${team.toUpperCase()} score ${delta > 0 ? '+' : ''}${delta} (${label}) → ${state.scores[team]}`);
+            checkGapRule();
+        };
+
+        const handlePenalty = (btn) => {
+            if (state.controlsLocked) { alert("Match already concluded."); return; }
+            const team = btn.closest('.penalty-grid').dataset.team;
+            if (btn.classList.contains('k-btn')) { promptDrasticAction('KIKEN', team); return; }
+            if (btn.classList.contains('s-btn')) { promptDrasticAction('SHIKKAKU', team); return; }
+            if (btn.classList.contains('h')) { promptDrasticAction('HANSOKU', team); return; }
+            btn.classList.toggle('active');
+            const penalty = btn.dataset.penalty;
+            if (btn.classList.contains('active')) {
+                state.penalties[team].push(penalty);
+                recordLog(`${team.toUpperCase()} penalty: ${penalty}`);
+            } else {
+                state.penalties[team] = state.penalties[team].filter((p) => p !== penalty);
+                recordLog(`${team.toUpperCase()} penalty cleared: ${penalty}`);
+            }
+        };
+
+        const promptDrasticAction = (type, offenderTeam) => {
+            state.pendingDecision = { type, offenderTeam };
+            if (type === 'KIKEN') {
+                els.decisionTitle.textContent = "⚠️ Apply KIKEN (Bout Forfeiture)";
+                els.decisionMessage.textContent = "Confirm that the offender has forfeited the match due to KIKEN.";
+            } else if (type === 'SHIKKAKU') {
+                els.decisionTitle.textContent = "🚨 Apply SHIKKAKU (Tournament Disqualification)";
+                els.decisionMessage.textContent = "WARNING: This severe action disqualifies the offender from the entire tournament.";
+            } else if (type === 'HANSOKU') {
+                els.decisionTitle.textContent = "⚠️ Apply HANSOKU (Disqualification)";
+                els.decisionMessage.textContent = "Hansoku: Disqualified for rule violations; opponent wins.";
+            }
+            els.decisionConfirmBtn.textContent = "OKAY";
+            els.decisionCancelBtn.textContent = "CANCEL";
+            els.decisionModal.classList.remove('hidden');
+        };
+
+        const confirmDrasticAction = () => {
+            if (!state.pendingDecision) return;
+            const { type, offenderTeam } = state.pendingDecision;
+            els.decisionModal.classList.add('hidden');
+            const winnerTeam = offenderTeam === 'ao' ? 'aka' : 'ao';
+            if (type === 'KIKEN' || type === 'SHIKKAKU') { state.scores[winnerTeam] = 8; state.scores[offenderTeam] = 0; updateScoreDisplays(); }
+            if (type === 'SHIKKAKU') {
+                const { rounds, active } = state.tournament;
+                const currentMatch = rounds[active.roundIndex][active.matchIndex];
+                const offenderIndex = offenderTeam === 'ao' ? 0 : 1;
+                if (currentMatch.players[offenderIndex]) { currentMatch.players[offenderIndex].disqualified = true; }
+            }
+            declareWinner(winnerTeam, type, `✅ ${type} Applied`);
+            state.pendingDecision = null;
+        };
+
+        const closeDecisionModal = () => { els.decisionModal.classList.add('hidden'); state.pendingDecision = null; };
+
+        const toggleSenshu = (indicator) => {
+            if (state.controlsLocked) return;
+            const team = indicator.dataset.team;
+            const other = team === 'ao' ? els.akaSenshu : els.aoSenshu;
+            indicator.classList.toggle('active');
+            if (indicator.classList.contains('active')) { other.classList.remove('active'); recordLog(`${team.toUpperCase()} gains Senshu`); }
+        };
+
+        const checkGapRule = () => {
+            const gap = Math.abs(state.scores.ao - state.scores.aka);
+            if (gap >= GAP_LIMIT) { declareWinner(state.scores.ao > state.scores.aka ? 'ao' : 'aka', `${GAP_LIMIT}-point gap reached`); }
+        };
+
+        const decideWinnerByScore = () => {
+            if (state.scores.ao === state.scores.aka) return null;
+            return state.scores.ao > state.scores.aka ? 'ao' : 'aka';
+        };
+
+        const recordLog = (line) => {
+            const stamp = new Date().toLocaleTimeString();
+            state.logBuffer.push(`[${stamp}] ${line}`);
+        };
+
+        const persistLogs = (logs) => localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+        const getStoredLogs = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+        const saveMatchLog = (winnerTeam, reason) => {
+            const logs = getStoredLogs();
+            const start = state.matchStartTime ? state.matchStartTime.toISOString() : new Date().toISOString();
+            const end = new Date().toISOString();
+            const winnerName = winnerTeam === 'ao' ? els.aoNameInput.value : els.akaNameInput.value;
+            const loserName = winnerTeam === 'ao' ? els.akaNameInput.value : els.aoNameInput.value;
+            const content = `Match Start: ${start}\nMatch End: ${end}\nWinner: ${winnerName}\nLoser: ${loserName}\nReason: ${reason}\n\nEvents:\n${state.logBuffer.join('\n')}\n\nFinal Score - AO: ${state.scores.ao} AKA: ${state.scores.aka}`;
+            logs.unshift({ id: Date.now(), filename: `match-${end.replace(/[:T]/g, '-')}.txt`, content });
+            persistLogs(logs);
+        };
+
+        const openHistoryModal = () => {
+        els.historyList.innerHTML = '';
+        const logs = getStoredLogs();
+        if (!logs.length) {
+            els.historyPreview.textContent = 'No saved matches yet.';
+            els.historyModal.classList.remove('hidden');
+            return;
+        }
+        els.historyPreview.textContent = 'Select a log to preview its contents.';
+        logs.forEach(log => {
+            const li = document.createElement('li');
+            li.style.display = "flex";
+            li.style.justifyContent = "space-between";
+            li.style.alignItems = "center";
+            li.style.gap = "10px";
+            li.style.padding = "8px";
+            li.style.borderBottom = "1px solid #333";
+
+            const btn = document.createElement('button');
+            btn.className = "history-entry";
+            btn.textContent = log.filename;
+            btn.style.flex = "1";
+            btn.style.textAlign = "left";
+            btn.style.background = "none";
+            btn.style.border = "none";
+            btn.style.color = "inherit";
+            btn.style.cursor = "pointer";
+            btn.onclick = () => els.historyPreview.textContent = log.content;
+
+            const pdfBtn = document.createElement('button');
+            pdfBtn.textContent = "PDF";
+            pdfBtn.style.padding = "4px 8px";
+            pdfBtn.style.fontSize = "0.7rem";
+            pdfBtn.style.cursor = "pointer";
+            pdfBtn.style.borderRadius = "4px";
+            pdfBtn.style.backgroundColor = "var(--color-yellow)";
+            pdfBtn.style.color = "black";
+            pdfBtn.style.border = "none";
+            pdfBtn.onclick = (e) => {
+                e.stopPropagation();
+                downloadLogAsPdf(log);
+            };
+
+            li.appendChild(btn);
+            li.appendChild(pdfBtn);
+            els.historyList.appendChild(li);
+        });
+        els.historyModal.classList.remove('hidden');
+    };
+
+        const declareWinner = (team, reason, customTitle) => {
+            stopTimer(); lockControls(true);
+            const winnerName = team === 'ao' ? els.aoNameInput.value : els.akaNameInput.value;
+            els.winnerTitle.textContent = customTitle || `${winnerName} wins!`;
+            els.winnerMessage.textContent = `${winnerName} won. Reason: ${reason}.`;
+            els.winnerModal.classList.remove('hidden');
+            saveMatchLog(team, reason);
+            advanceBracket(team);
+        };
+
+        const advanceBracket = (winnerTeam) => {
+            const { rounds, active } = state.tournament;
+            const match = rounds[active.roundIndex][active.matchIndex];
+            match.complete = true;
+            const winnerIndex = winnerTeam === 'ao' ? 0 : 1;
+            match.winner = winnerIndex;
+            const nextRound = rounds[active.roundIndex + 1];
+            if (nextRound) {
+                const targetMatch = nextRound[Math.floor(active.matchIndex / 2)];
+                if (targetMatch) {
+                    const winnerPlayer = match.players[winnerIndex] || { name: winnerName, flag: null };
+                    targetMatch.players[active.matchIndex % 2] = { ...winnerPlayer };
+                }
+            }
+            renderBracket();
+        };
+
+        const loadNextMatch = () => {
+            const { active, rounds } = state.tournament;
+            if (active.matchIndex + 1 < rounds[active.roundIndex].length) { active.matchIndex++; }
+            else if (active.roundIndex + 1 < rounds.length) { active.roundIndex++; active.matchIndex = 0; }
+            else { showToast('Tournament complete!'); return; }
+            state.roundCount++; updateRoundUI(); prepareMatch();
+        };
+
+        const updateRoundUI = () => { els.roundNumber.textContent = state.roundCount; showToast(`Round ${state.roundCount} – Get Ready`); };
+
+        const prepareMatch = () => {
+            resetScores(); resetPenalties(); resetSenshu();
+            state.logBuffer = []; state.matchStartTime = null;
+            lockControls(false); resetTimer();
+            const match = state.tournament.rounds[state.tournament.active.roundIndex][state.tournament.active.matchIndex];
+            const [pA = { name: '' }, pB = { name: '' }] = match.players;
+            els.aoNameInput.value = pA.name || 'AO';
+            els.akaNameInput.value = pB.name || 'AKA';
+            renderBracket();
+        };
+
+        const getFullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        const requestFullscreen = (element) => {
+            if (element.requestFullscreen) return element.requestFullscreen();
+            if (element.webkitRequestFullscreen) return element.webkitRequestFullscreen();
+            if (element.mozRequestFullScreen) return element.mozRequestFullScreen();
+            if (element.msRequestFullscreen) return element.msRequestFullscreen();
+        };
+        const exitFullscreen = () => {
+            if (document.exitFullscreen) return document.exitFullscreen();
+            if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+            if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
+            if (document.msExitFullscreen) return document.msExitFullscreen();
+        };
+        const toggleFullscreen = () => {
+            const active = getFullscreenElement();
+            if (active) exitFullscreen(); else requestFullscreen(els.appShell);
+        };
+
+        populateMatchDurations();
+        populateWeightClasses(els.categorySelect.value, els.genderSelect.value);
+        renderPlayerInputs();
+        syncDivisionSelection();
+
+        els.categorySelect.addEventListener('change', () => { populateWeightClasses(els.categorySelect.value, els.genderSelect.value); syncDivisionSelection(); });
+        els.genderSelect.addEventListener('change', () => { populateWeightClasses(els.categorySelect.value, els.genderSelect.value); syncDivisionSelection(); });
+        els.playerCountSelect.addEventListener('change', renderPlayerInputs);
+        els.startTournamentBtn.addEventListener('click', () => {
+            const configs = gatherPlayerConfigs(); if (!configs.length) return;
+            state.tournament.players = configs; state.tournament.active = { roundIndex: 0, matchIndex: 0 };
+            createInitialBracket(configs); renderBracket();
+            setTimerDuration(secondsFromLabel(els.matchDurationSelect.value));
+            els.setupOverlay.classList.add('hidden'); els.appShell.classList.remove('hidden');
+            state.roundCount = 1; updateRoundUI(); prepareMatch();
+        });
+
+        els.startPauseBtn.addEventListener('click', () => { if (!state.controlsLocked) state.timer.ticking ? stopTimer() : startTimer(); });
+        els.resetBtn.addEventListener('click', () => { stopTimer(); prepareMatch(); });
+        els.scoreButtons.forEach(btn => btn.onclick = () => handleScoreChange(btn.dataset.team, Number(btn.dataset.points), btn.textContent));
+        els.penaltyButtons.forEach(btn => btn.onclick = () => {
+            if (btn.classList.contains('plus')) { state.timer.remaining++; updateTimerDisplay(); }
+            else if (btn.classList.contains('minus')) { state.timer.remaining = Math.max(0, state.timer.remaining - 1); updateTimerDisplay(); }
+            else handlePenalty(btn);
+        });
+        els.decisionConfirmBtn.onclick = confirmDrasticAction;
+        els.decisionCancelBtn.onclick = closeDecisionModal;
+        els.decisionClose.onclick = closeDecisionModal;
+        els.swapBtn.onclick = () => {
+            if (state.controlsLocked) return;
+            const [aoN, akaN, aoS, akaS] = [els.aoNameInput.value, els.akaNameInput.value, state.scores.ao, state.scores.aka];
+            els.aoNameInput.value = akaN; els.akaNameInput.value = aoN;
+            state.scores.ao = akaS; state.scores.aka = aoS; updateScoreDisplays();
+        };
+        els.historyTriggers.forEach(btn => btn.onclick = openHistoryModal);
+        els.historyClose.onclick = () => els.historyModal.classList.add('hidden');
+        els.eraseHistoryBtn.onclick = () => { if (confirm('Erase all history?')) { persistLogs([]); openHistoryModal(); } };
+        els.winnerModalClose.onclick = () => els.winnerModal.classList.add('hidden');
+        els.winnerNextBtn.onclick = () => { els.winnerModal.classList.add('hidden'); loadNextMatch(); };
+        els.fullscreenBtn.onclick = toggleFullscreen;
+        lockControls(true);
+        updateTimerDisplay();
+    });
+</script>
 </body>
 </html>
