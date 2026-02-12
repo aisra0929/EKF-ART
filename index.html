@@ -72,6 +72,25 @@ display: none !important;
         justify-content: flex-start;
     }
 
+    /* Task 2: Hide everything EXCEPT scoreboard on mobile fullscreen */
+    @media (max-width: 768px) {
+        .app-shell:fullscreen .shell-header,
+        .app-shell:fullscreen .main-title,
+        .app-shell:fullscreen .referee-container,
+        .app-shell:fullscreen .bracket-panel {
+            display: none !important;
+        }
+        
+        /* Ensure the scoreboard centers in the empty screen */
+        .app-shell:fullscreen .scoreboard-suite {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 0;
+        }
+    }
+
     .app-shell:-webkit-full-screen {
         width: 100vw !important;
         height: 100vh !important;
@@ -205,8 +224,26 @@ display: none !important;
     .aka .score-btn { background-color: var(--color-aka); }
 
     .senshu-container { width: 80px; display: flex; justify-content: center; align-items: center; height: 100%; background-color: #111; }
-    .senshu-indicator { width: 50px; height: 50px; background-color: #333; border-radius: 50%; color: #000; font-size: 2rem; font-weight: bold; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.3s; }
-    .senshu-indicator.active { background-color: var(--color-yellow); box-shadow: 0 0 15px var(--color-yellow); }
+    
+    /* Task 1: Senshu Indicator Active Glow */
+    .senshu-indicator { 
+        width: 50px; 
+        height: 50px; 
+        background-color: #333; 
+        border-radius: 50%; 
+        color: #000; 
+        font-size: 2rem; 
+        font-weight: bold; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        cursor: pointer; 
+        transition: all 0.3s; 
+    }
+    .senshu-indicator.active { 
+        background-color: var(--color-yellow); 
+        box-shadow: 0 0 25px 5px var(--color-yellow); /* Glow Effect */
+    }
 
     .center-spacer { width: 40px; background-color: #222; display: flex; align-items: center; justify-content: center; border-left: 1px solid #444; border-right: 1px solid #444; }
     .swap-btn { background: none; border: none; color: #777; font-size: 24px; cursor: pointer; }
@@ -367,19 +404,19 @@ display: none !important;
             order: initial !important;
         }
         .history-download-btn {
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: var(--color-yellow);
-    color: black;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: transform 0.1s;
-}
-.history-download-btn:active {
-    transform: scale(0.95);
-}
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: var(--color-yellow);
+            color: black;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .history-download-btn:active {
+            transform: scale(0.95);
+        }
     }
 </style>
 </head>
@@ -489,9 +526,7 @@ display: none !important;
                     <button class="swap-btn" id="swap-sides-btn" data-tooltip="Swap Colors/Names">&#8646;</button>
                 </div>
                 <div class="team aka" data-side="right">
-                    <div class="senshu-container">
-                        <div class="senshu-indicator" id="aka-senshu" data-team="aka" data-tooltip="Senshu (Advantage)">S</div>
-                    </div>
+                    <div class="senshu-indicator" id="aka-senshu" data-team="aka" data-tooltip="Senshu (Advantage)">S</div>
                     <div class="team-info">
                         <input type="text" class="team-name-input" id="aka-name-input" value="AKA" data-team="aka">
                         <div class="score-display" id="aka-score">0</div>
@@ -725,74 +760,73 @@ display: none !important;
             return `${minutes}:${seconds}`;
         };
 
-
         // PDF Generation Helpers
-    const escapePdfText = (text) => text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-    const wrapPdfLines = (text) => {
-        const wrapped = [];
-        const rawLines = text.split('\n');
-        rawLines.forEach((line) => {
-            let working = line || ' ';
-            while (working.length > PDF_LINE_LIMIT) {
-                wrapped.push(working.slice(0, PDF_LINE_LIMIT));
-                working = working.slice(PDF_LINE_LIMIT);
-            }
-            wrapped.push(working.length ? working : ' ');
-        });
-        return wrapped;
-    };
-    const createPdfBlob = (text) => {
-        const lines = wrapPdfLines(text).map(escapePdfText);
-        const maxLinesPerPage = Math.floor((PDF_PAGE.height - (PDF_PAGE.margin * 2)) / PDF_PAGE.lineHeight);
-        const chunks = [];
-        for (let i = 0; i < lines.length; i += maxLinesPerPage) {
-            chunks.push(lines.slice(i, i + maxLinesPerPage));
-        }
-        if (!chunks.length) chunks.push([' ']);
-
-        const objects = [];
-        const addObject = (body) => { objects.push(body); return objects.length; };
-        addObject('<< /Type /Catalog /Pages 2 0 R >>');
-        const pagesIndex = addObject('__PAGES__');
-        const fontIndex = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
-        const pageNumbers = [];
-        chunks.forEach((chunk) => {
-            let contentStream = 'BT\n/F1 12 Tf\n14 TL\n';
-            contentStream += `50 ${PDF_PAGE.height - PDF_PAGE.margin} Td\n`;
-            chunk.forEach((line, idx) => {
-                if (idx > 0) contentStream += 'T*\n';
-                contentStream += `(${line || ' '}) Tj\n`;
+        const escapePdfText = (text) => text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+        const wrapPdfLines = (text) => {
+            const wrapped = [];
+            const rawLines = text.split('\n');
+            rawLines.forEach((line) => {
+                let working = line || ' ';
+                while (working.length > PDF_LINE_LIMIT) {
+                    wrapped.push(working.slice(0, PDF_LINE_LIMIT));
+                    working = working.slice(PDF_LINE_LIMIT);
+                }
+                wrapped.push(working.length ? working : ' ');
             });
-            contentStream += 'ET';
-            const contentIndex = addObject(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
-            const pageIndex = addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_PAGE.width} ${PDF_PAGE.height}] /Contents ${contentIndex} 0 R /Resources << /Font << /F1 ${fontIndex} 0 R >> >> >>`);
-            pageNumbers.push(pageIndex);
-        });
-        objects[pagesIndex - 1] = `<< /Type /Pages /Kids [${pageNumbers.map((num) => `${num} 0 R`).join(' ')}] /Count ${pageNumbers.length} >>`;
-        let pdf = '%PDF-1.4\n';
-        const offsets = [0];
-        objects.forEach((body, idx) => {
-            offsets[idx + 1] = pdf.length;
-            pdf += `${idx + 1} 0 obj\n${body}\nendobj\n`;
-        });
-        const xrefPosition = pdf.length;
-        pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-        for (let i = 1; i <= objects.length; i += 1) {
-            pdf += `${offsets[i].toString().padStart(10, '0')} 00000 n \n`;
-        }
-        pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`;
-        return new Blob([pdf], { type: 'application/pdf' });
-    };
-    const downloadLogAsPdf = (log) => {
-        const blob = createPdfBlob(log.content);
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = log.filename.replace('.txt', '.pdf');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(link.href), 0);
-    };
+            return wrapped;
+        };
+        const createPdfBlob = (text) => {
+            const lines = wrapPdfLines(text).map(escapePdfText);
+            const maxLinesPerPage = Math.floor((PDF_PAGE.height - (PDF_PAGE.margin * 2)) / PDF_PAGE.lineHeight);
+            const chunks = [];
+            for (let i = 0; i < lines.length; i += maxLinesPerPage) {
+                chunks.push(lines.slice(i, i + maxLinesPerPage));
+            }
+            if (!chunks.length) chunks.push([' ']);
+
+            const objects = [];
+            const addObject = (body) => { objects.push(body); return objects.length; };
+            addObject('<< /Type /Catalog /Pages 2 0 R >>');
+            const pagesIndex = addObject('__PAGES__');
+            const fontIndex = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+            const pageNumbers = [];
+            chunks.forEach((chunk) => {
+                let contentStream = 'BT\n/F1 12 Tf\n14 TL\n';
+                contentStream += `50 ${PDF_PAGE.height - PDF_PAGE.margin} Td\n`;
+                chunk.forEach((line, idx) => {
+                    if (idx > 0) contentStream += 'T*\n';
+                    contentStream += `(${line || ' '}) Tj\n`;
+                });
+                contentStream += 'ET';
+                const contentIndex = addObject(`<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream`);
+                const pageIndex = addObject(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PDF_PAGE.width} ${PDF_PAGE.height}] /Contents ${contentIndex} 0 R /Resources << /Font << /F1 ${fontIndex} 0 R >> >> >>`);
+                pageNumbers.push(pageIndex);
+            });
+            objects[pagesIndex - 1] = `<< /Type /Pages /Kids [${pageNumbers.map((num) => `${num} 0 R`).join(' ')}] /Count ${pageNumbers.length} >>`;
+            let pdf = '%PDF-1.4\n';
+            const offsets = [0];
+            objects.forEach((body, idx) => {
+                offsets[idx + 1] = pdf.length;
+                pdf += `${idx + 1} 0 obj\n${body}\nendobj\n`;
+            });
+            const xrefPosition = pdf.length;
+            pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+            for (let i = 1; i <= objects.length; i += 1) {
+                pdf += `${offsets[i].toString().padStart(10, '0')} 00000 n \n`;
+            }
+            pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefPosition}\n%%EOF`;
+            return new Blob([pdf], { type: 'application/pdf' });
+        };
+        const downloadLogAsPdf = (log) => {
+            const blob = createPdfBlob(log.content);
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = log.filename.replace('.txt', '.pdf');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(link.href), 0);
+        };
 
         const showToast = (text) => {
             els.roundBanner.textContent = text;
@@ -939,6 +973,7 @@ display: none !important;
             state.penalties = { ao: [], aka: [] };
         };
 
+        // Task 1: Logic restored as requested
         const resetSenshu = () => {
             [els.aoSenshu, els.akaSenshu].forEach((indicator) => indicator.classList.remove('active'));
         };
@@ -1059,12 +1094,18 @@ display: none !important;
 
         const closeDecisionModal = () => { els.decisionModal.classList.add('hidden'); state.pendingDecision = null; };
 
+        // Task 1: Logic restored as requested
         const toggleSenshu = (indicator) => {
             if (state.controlsLocked) return;
             const team = indicator.dataset.team;
             const other = team === 'ao' ? els.akaSenshu : els.aoSenshu;
             indicator.classList.toggle('active');
-            if (indicator.classList.contains('active')) { other.classList.remove('active'); recordLog(`${team.toUpperCase()} gains Senshu`); }
+            if (indicator.classList.contains('active')) {
+                other.classList.remove('active');
+                recordLog(`${team.toUpperCase()} gains Senshu`);
+            } else {
+                recordLog(`${team.toUpperCase()} loses Senshu`);
+            }
         };
 
         const checkGapRule = () => {
@@ -1097,54 +1138,54 @@ display: none !important;
         };
 
         const openHistoryModal = () => {
-        els.historyList.innerHTML = '';
-        const logs = getStoredLogs();
-        if (!logs.length) {
-            els.historyPreview.textContent = 'No saved matches yet.';
+            els.historyList.innerHTML = '';
+            const logs = getStoredLogs();
+            if (!logs.length) {
+                els.historyPreview.textContent = 'No saved matches yet.';
+                els.historyModal.classList.remove('hidden');
+                return;
+            }
+            els.historyPreview.textContent = 'Select a log to preview its contents.';
+            logs.forEach(log => {
+                const li = document.createElement('li');
+                li.style.display = "flex";
+                li.style.justifyContent = "space-between";
+                li.style.alignItems = "center";
+                li.style.gap = "10px";
+                li.style.padding = "8px";
+                li.style.borderBottom = "1px solid #333";
+
+                const btn = document.createElement('button');
+                btn.className = "history-entry";
+                btn.textContent = log.filename;
+                btn.style.flex = "1";
+                btn.style.textAlign = "left";
+                btn.style.background = "none";
+                btn.style.border = "none";
+                btn.style.color = "inherit";
+                btn.style.cursor = "pointer";
+                btn.onclick = () => els.historyPreview.textContent = log.content;
+
+                const pdfBtn = document.createElement('button');
+                pdfBtn.textContent = "PDF";
+                pdfBtn.style.padding = "4px 8px";
+                pdfBtn.style.fontSize = "0.7rem";
+                pdfBtn.style.cursor = "pointer";
+                pdfBtn.style.borderRadius = "4px";
+                pdfBtn.style.backgroundColor = "var(--color-yellow)";
+                pdfBtn.style.color = "black";
+                pdfBtn.style.border = "none";
+                pdfBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    downloadLogAsPdf(log);
+                };
+
+                li.appendChild(btn);
+                li.appendChild(pdfBtn);
+                els.historyList.appendChild(li);
+            });
             els.historyModal.classList.remove('hidden');
-            return;
-        }
-        els.historyPreview.textContent = 'Select a log to preview its contents.';
-        logs.forEach(log => {
-            const li = document.createElement('li');
-            li.style.display = "flex";
-            li.style.justifyContent = "space-between";
-            li.style.alignItems = "center";
-            li.style.gap = "10px";
-            li.style.padding = "8px";
-            li.style.borderBottom = "1px solid #333";
-
-            const btn = document.createElement('button');
-            btn.className = "history-entry";
-            btn.textContent = log.filename;
-            btn.style.flex = "1";
-            btn.style.textAlign = "left";
-            btn.style.background = "none";
-            btn.style.border = "none";
-            btn.style.color = "inherit";
-            btn.style.cursor = "pointer";
-            btn.onclick = () => els.historyPreview.textContent = log.content;
-
-            const pdfBtn = document.createElement('button');
-            pdfBtn.textContent = "PDF";
-            pdfBtn.style.padding = "4px 8px";
-            pdfBtn.style.fontSize = "0.7rem";
-            pdfBtn.style.cursor = "pointer";
-            pdfBtn.style.borderRadius = "4px";
-            pdfBtn.style.backgroundColor = "var(--color-yellow)";
-            pdfBtn.style.color = "black";
-            pdfBtn.style.border = "none";
-            pdfBtn.onclick = (e) => {
-                e.stopPropagation();
-                downloadLogAsPdf(log);
-            };
-
-            li.appendChild(btn);
-            li.appendChild(pdfBtn);
-            els.historyList.appendChild(li);
-        });
-        els.historyModal.classList.remove('hidden');
-    };
+        };
 
         const declareWinner = (team, reason, customTitle) => {
             stopTimer(); lockControls(true);
@@ -1188,9 +1229,24 @@ display: none !important;
             state.logBuffer = []; state.matchStartTime = null;
             lockControls(false); resetTimer();
             const match = state.tournament.rounds[state.tournament.active.roundIndex][state.tournament.active.matchIndex];
-            const [pA = { name: '' }, pB = { name: '' }] = match.players;
+            const [pA = { name: '', flag: null }, pB = { name: '', flag: null }] = match.players;
+            
             els.aoNameInput.value = pA.name || 'AO';
             els.akaNameInput.value = pB.name || 'AKA';
+            
+            const applyFlag = (img, src) => {
+                if (!img) return;
+                if (src) {
+                    img.src = src;
+                    img.style.display = 'block';
+                } else {
+                    img.removeAttribute('src');
+                    img.style.display = 'none';
+                }
+            };
+            applyFlag(els.aoFlagScore, pA.flag);
+            applyFlag(els.akaFlagScore, pB.flag);
+            
             renderBracket();
         };
 
@@ -1207,9 +1263,22 @@ display: none !important;
             if (document.mozCancelFullScreen) return document.mozCancelFullScreen();
             if (document.msExitFullscreen) return document.msExitFullscreen();
         };
+        
+        // Task 2: Tasked logic for mobile landscape fullscreen
         const toggleFullscreen = () => {
             const active = getFullscreenElement();
-            if (active) exitFullscreen(); else requestFullscreen(els.appShell);
+            if (active) {
+                exitFullscreen();
+                if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+            } else {
+                requestFullscreen(els.appShell).then(() => {
+                    if (window.innerWidth <= 768 && screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(() => {
+                            // Orientation lock failed/unsupported
+                        });
+                    }
+                });
+            }
         };
 
         populateMatchDurations();
@@ -1220,6 +1289,24 @@ display: none !important;
         els.categorySelect.addEventListener('change', () => { populateWeightClasses(els.categorySelect.value, els.genderSelect.value); syncDivisionSelection(); });
         els.genderSelect.addEventListener('change', () => { populateWeightClasses(els.categorySelect.value, els.genderSelect.value); syncDivisionSelection(); });
         els.playerCountSelect.addEventListener('change', renderPlayerInputs);
+        
+        els.playerGrid.addEventListener('change', (event) => {
+            const input = event.target;
+            if (input.type === 'file' && input.dataset.playerFlag) {
+                const index = Number(input.dataset.playerFlag);
+                const file = input.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        state.playerFlags[index] = reader.result;
+                        const preview = els.playerGrid.querySelector(`[data-player-flag-preview="${index}"]`);
+                        if (preview) { preview.src = reader.result; preview.style.display = 'block'; }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+
         els.startTournamentBtn.addEventListener('click', () => {
             const configs = gatherPlayerConfigs(); if (!configs.length) return;
             state.tournament.players = configs; state.tournament.active = { roundIndex: 0, matchIndex: 0 };
@@ -1240,18 +1327,32 @@ display: none !important;
         els.decisionConfirmBtn.onclick = confirmDrasticAction;
         els.decisionCancelBtn.onclick = closeDecisionModal;
         els.decisionClose.onclick = closeDecisionModal;
+        
+        // Task 1 & Mutual Exclusive logic within swap
         els.swapBtn.onclick = () => {
             if (state.controlsLocked) return;
             const [aoN, akaN, aoS, akaS] = [els.aoNameInput.value, els.akaNameInput.value, state.scores.ao, state.scores.aka];
             els.aoNameInput.value = akaN; els.akaNameInput.value = aoN;
             state.scores.ao = akaS; state.scores.aka = aoS; updateScoreDisplays();
+            
+            // Task 1 requested snippet
+            const aoSenshuActive = els.aoSenshu.classList.contains('active');
+            const akaSenshuActive = els.akaSenshu.classList.contains('active');
+            els.aoSenshu.classList.toggle('active', akaSenshuActive);
+            els.akaSenshu.classList.toggle('active', aoSenshuActive);
+            recordLog('Sides swapped (names & colors)');
         };
+
         els.historyTriggers.forEach(btn => btn.onclick = openHistoryModal);
         els.historyClose.onclick = () => els.historyModal.classList.add('hidden');
         els.eraseHistoryBtn.onclick = () => { if (confirm('Erase all history?')) { persistLogs([]); openHistoryModal(); } };
         els.winnerModalClose.onclick = () => els.winnerModal.classList.add('hidden');
         els.winnerNextBtn.onclick = () => { els.winnerModal.classList.add('hidden'); loadNextMatch(); };
         els.fullscreenBtn.onclick = toggleFullscreen;
+        
+        // Task 1 wired listener
+        [els.aoSenshu, els.akaSenshu].forEach((indicator) => indicator.addEventListener('click', () => toggleSenshu(indicator)));
+
         lockControls(true);
         updateTimerDisplay();
     });
